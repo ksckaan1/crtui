@@ -59,6 +59,12 @@ func (r *RegistryClient) GetRegistryInfo(ctx context.Context) (*models.Registry,
 	}
 	defer resp.Body.Close()
 
+	registryType := resp.Header().Get("docker-distribution-api-version")
+
+	if registryType != "registry/2.0" {
+		return nil, fmt.Errorf("invalid registry server: %s", registryType)
+	}
+
 	supportsHTTP3 := strings.Contains(resp.Header().Get("alt-svc"), "h3=")
 	r.setTransport(supportsHTTP3)
 
