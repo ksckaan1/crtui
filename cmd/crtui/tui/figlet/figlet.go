@@ -1,6 +1,12 @@
 package figlet
 
-const Figlet = `  ____ ____ _____ _   _ ___
+import (
+	"github.com/charmbracelet/lipgloss"
+)
+
+var Figlet = lipgloss.NewStyle().Faint(true).Render(FigletText)
+
+const FigletText = `  ____ ____ _____ _   _ ___
 / ____|  _ \_   _| | | |_ _|
 | |   | |_) || | | | | || |
 | |___|  _ < | | | |_| || |
