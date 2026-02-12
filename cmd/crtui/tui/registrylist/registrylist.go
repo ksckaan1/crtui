@@ -10,26 +10,39 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/ksckaan1/crtui/cmd/crtui/tui/figlet"
+	"github.com/ksckaan1/crtui/cmd/crtui/tui/nav"
+	"github.com/ksckaan1/crtui/cmd/crtui/tui/registrydetails"
 	"github.com/ksckaan1/crtui/cmd/crtui/tui/ui"
+	"github.com/ksckaan1/crtui/internal/core/enums/registrystatus"
 	"github.com/samber/lo"
 )
 
 var _ tea.Model = (*Model)(nil)
 
 type listKeyMap struct {
-	quit    key.Binding
-	refresh key.Binding
+	refresh        key.Binding
+	selectRegistry key.Binding
+	filter         key.Binding
+	quit           key.Binding
 }
 
 func newListKeyMap() *listKeyMap {
 	return &listKeyMap{
-		quit: key.NewBinding(
-			key.WithKeys("ctrl+c"),
-			key.WithHelp("ctrl+c", "Quit"),
-		),
 		refresh: key.NewBinding(
 			key.WithKeys("r"),
 			key.WithHelp("r", "Refresh"),
+		),
+		selectRegistry: key.NewBinding(
+			key.WithKeys("enter"),
+			key.WithHelp("enter", "Select"),
+		),
+		filter: key.NewBinding(
+			key.WithKeys("/"),
+			key.WithHelp("/", "Filter"),
+		),
+		quit: key.NewBinding(
+			key.WithKeys("ctrl+c"),
+			key.WithHelp("ctrl+c", "Quit"),
 		),
 	}
 }
@@ -78,27 +91,30 @@ func (m *Model) Init() tea.Cmd {
 		},
 	})
 
-	cmds := []tea.Cmd{m.spinner.Tick}
+	cmds := []tea.Cmd{m.spinner.Tick, tea.WindowSize()}
 	cmds = append(cmds, m.fetchRegistries()...)
 
 	return tea.Batch(cmds...)
-}
-
-func (m *Model) fetchRegistries() []tea.Cmd {
-	return lo.Map(m.registries, func(item *Registry, i int) tea.Cmd {
-		item.Status = "loading"
-		return fetchRegistry(i, item)
-	})
 }
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
-		case key.Matches(msg, m.keys.quit):
-			return m, tea.Quit
+		case key.Matches(msg, m.keys.selectRegistry) && m.registries[m.list.Index()].Status == registrystatus.Online:
+			reg := m.registries[m.list.Index()]
+			return nav.Navigate(registrydetails.NewRegistryDetails(&registrydetails.Registry{
+				URL:            reg.URL,
+				Username:       reg.Username,
+				Password:       reg.Password,
+				SupportsHTTPS3: reg.SupportsHTTP3,
+			}, m))
+
 		case key.Matches(msg, m.keys.refresh) && m.list.FilterState() != list.Filtering:
 			return m, tea.Batch(m.fetchRegistries()...)
+
+		case key.Matches(msg, m.keys.quit):
+			return m, tea.Quit
 		}
 
 	case tea.WindowSizeMsg:
@@ -109,6 +125,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case registryResult:
 		m.registries[msg.index].Status = msg.status
+		m.registries[msg.index].SupportsHTTP3 = msg.supportsHTTP3
 	}
 
 	var spinnerCmd tea.Cmd
@@ -127,13 +144,14 @@ func (m *Model) View() string {
 
 	out := lipgloss.NewStyle().Padding(1).Render(lipgloss.JoinVertical(
 		lipgloss.Top,
-		drawHeader(m.width-4, 5),
+		m.drawHeader(m.width-4, 5),
 		ui.NewWindow(ui.WindowConfig{
-			Width:      m.width - 4,
-			Height:     m.height - 10,
-			LeftTitle:  "Container Registries",
-			RightTitle: fmt.Sprintf("%d registries", len(m.registries)),
-			Content:    m.list.View(),
+			Width:       m.width - 4,
+			Height:      m.height - 10,
+			LeftTitle:   "Container Registries",
+			RightTitle:  ui.CountKind(len(m.registries), "registry", "registries"),
+			Content:     m.list.View(),
+			BorderColor: lipgloss.Color("#FFFFFF"),
 		}),
 		statusBar,
 	))
@@ -143,74 +161,39 @@ func (m *Model) View() string {
 	return s.String()
 }
 
-func drawHeader(width, height int) string {
+func (m *Model) drawHeader(width, height int) string {
 	out := lipgloss.JoinHorizontal(
 		lipgloss.Top,
-		lipgloss.NewStyle().Foreground(primaryColor).Render(figlet.Figlet),
+		figlet.Figlet,
 		" ",
-		ui.NewWindow(ui.WindowConfig{
-			Width:     width - 50,
-			Height:    height,
-			LeftTitle: "Keys",
-			Content:   drawHelpContent(),
+		ui.NewKeysWindow(ui.KeysWindowConfig{
+			Width:  width - 50,
+			Height: height,
+			Keys: []key.Binding{
+				key.NewBinding(key.WithHelp("↑/↓", "Navigate")),
+				m.keys.selectRegistry,
+				m.keys.filter,
+				m.keys.refresh,
+				m.keys.quit,
+			},
 		}),
 		" ",
-		ui.NewWindow(ui.WindowConfig{
-			Width:     18,
-			Height:    height,
-			LeftTitle: "Statuses",
-			Content:   drawStatusContent(),
-		}),
+		drawStatusContent(height),
 	)
 
 	return out
 }
 
-func drawHelpContent() string {
-	helpContainer := lipgloss.NewStyle().
-		PaddingLeft(1)
-
-	keyStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#7D56F4")).
-		Width(6)
-
-	descStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#626262"))
-
-	arrowKeys := fmt.Sprintf("%s %s", keyStyle.Render("↑/↓"), descStyle.Render("Navigate"))
-	enterKey := fmt.Sprintf("%s %s", keyStyle.Render("enter"), descStyle.Render("Select"))
-	quitKey := fmt.Sprintf("%s %s", keyStyle.Render("ctrl-c"), descStyle.Render("Quit"))
-	filterKey := fmt.Sprintf("%s %s", keyStyle.Render("/"), descStyle.Render("Filter"))
-	refreshKey := fmt.Sprintf("%s %s", keyStyle.Render("r"), descStyle.Render("Refresh"))
-
-	helpContent := lipgloss.JoinHorizontal(lipgloss.Top,
-		lipgloss.JoinVertical(
-			lipgloss.Left,
-			arrowKeys,
-			enterKey,
-			filterKey,
-			refreshKey,
-		),
-		"  ",
-		lipgloss.JoinVertical(
-			lipgloss.Left,
-			quitKey,
-		),
-	)
-
-	return helpContainer.Render(helpContent)
-}
-
-func drawStatusContent() string {
+func drawStatusContent(height int) string {
 	statusContainer := lipgloss.NewStyle().
-		PaddingLeft(2)
+		PaddingLeft(1)
 
 	descStyle := lipgloss.NewStyle().
 		Foreground(lipgloss.Color("#626262"))
 
 	onlineStatus := fmt.Sprintf("%s %s", onlineDot, descStyle.Render("Online"))
 	offlineStatus := fmt.Sprintf("%s %s", offlineDot, descStyle.Render("Offline"))
-	unauthStatus := fmt.Sprintf("%s %s", unauthDot, descStyle.Render("Unauthorized"))
+	unauthStatus := fmt.Sprintf("%s %s", unauthDot, descStyle.Render("Unauth"))
 
 	statusContent := lipgloss.JoinVertical(
 		lipgloss.Left,
@@ -219,5 +202,17 @@ func drawStatusContent() string {
 		unauthStatus,
 	)
 
-	return statusContainer.Render(statusContent)
+	return ui.NewWindow(ui.WindowConfig{
+		Width:     18,
+		Height:    height,
+		LeftTitle: "Statuses",
+		Content:   statusContainer.Render(statusContent),
+	})
+}
+
+func (m *Model) fetchRegistries() []tea.Cmd {
+	return lo.Map(m.registries, func(item *Registry, i int) tea.Cmd {
+		item.Status = registrystatus.Loading
+		return fetchRegistry(i, item)
+	})
 }

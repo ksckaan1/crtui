@@ -3,8 +3,6 @@ package registrylist
 import "github.com/charmbracelet/lipgloss"
 
 var (
-	primaryColor = lipgloss.Color("#7D56F4")
-
 	onlineDot = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("42")).
 			Render("●")

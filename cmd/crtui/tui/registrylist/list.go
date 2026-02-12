@@ -8,14 +8,17 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/ksckaan1/crtui/cmd/crtui/tui/ui"
+	"github.com/ksckaan1/crtui/internal/core/enums/registrystatus"
 	"github.com/samber/lo"
 )
 
 type Registry struct {
-	URL      string
-	Username string
-	Password string
-	Status   string
+	URL           string
+	Username      string
+	Password      string
+	Status        registrystatus.RegistryStatus
+	SupportsHTTP3 bool
 }
 
 func (i *Registry) Title() string       { return i.URL }
@@ -41,34 +44,32 @@ func (d *registryListDelegate) Render(w io.Writer, m list.Model, index int, item
 	status := offlineDot
 
 	switch r.Status {
-	case "online":
+	case registrystatus.Online:
 		status = onlineDot
 
-	case "loading":
+	case registrystatus.Loading:
 		status = d.getSpinnerFunc()
 		if isSelected {
 			status = lipgloss.NewStyle().
-				Foreground(primaryColor).
+				Foreground(ui.PrimaryColor).
 				Render(status)
 		}
 
-	case "unauth":
+	case registrystatus.Unauth:
 		status = unauthDot
 	}
 
 	titleStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#FFFFFF"))
+		Foreground(lipgloss.Color("#FFFFFF")).Faint(true)
 	subtitleStyle := lipgloss.NewStyle().
 		Foreground(lipgloss.Color("#EAEAEA")).Faint(true)
 
 	if isSelected {
-		titleStyle = titleStyle.Foreground(primaryColor)
-		subtitleStyle = subtitleStyle.Foreground(primaryColor)
+		titleStyle = titleStyle.Foreground(lipgloss.Color("#FFFFFF")).Faint(false).Bold(true)
+		subtitleStyle = subtitleStyle.Foreground(lipgloss.Color("#FFFFFF")).Faint(false).Bold(true)
 	}
 
-	uri := r.URL
-
-	uri = strings.TrimPrefix(uri, "https://")
+	uri := strings.TrimPrefix(r.URL, "https://")
 	uri = strings.TrimPrefix(uri, "http://")
 
 	out := lipgloss.JoinHorizontal(
@@ -88,7 +89,7 @@ func (d *registryListDelegate) Render(w io.Writer, m list.Model, index int, item
 
 	if isSelected {
 		leftBorder = leftBorder.Border(lipgloss.ThickBorder(), false, false, false, true).
-			BorderLeftForeground(primaryColor)
+			BorderLeftForeground(lipgloss.Color("#FFFFFF"))
 	}
 
 	out = leftBorder.Render(out)

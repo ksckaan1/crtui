@@ -4,12 +4,14 @@ import (
 	"context"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/ksckaan1/crtui/internal/core/enums/registrystatus"
 	"github.com/ksckaan1/crtui/internal/infra/registryclient"
 )
 
 type registryResult struct {
-	index  int
-	status string
+	index         int
+	status        registrystatus.RegistryStatus
+	supportsHTTP3 bool
 }
 
 func fetchRegistry(index int, registry *Registry) tea.Cmd {
@@ -22,21 +24,16 @@ func fetchRegistry(index int, registry *Registry) tea.Cmd {
 		ri, err := rc.GetRegistryInfo(ctx)
 		if err != nil {
 			return registryResult{
-				index:  index,
-				status: "offline",
-			}
-		}
-
-		if ri.AuthSuccess {
-			return registryResult{
-				index:  index,
-				status: "online",
+				index:         index,
+				status:        registrystatus.Offline,
+				supportsHTTP3: ri.SupportsHTTP3,
 			}
 		}
 
 		return registryResult{
-			index:  index,
-			status: "unauth",
+			index:         index,
+			status:        ri.Status,
+			supportsHTTP3: ri.SupportsHTTP3,
 		}
 	}
 }
