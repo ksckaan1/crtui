@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ksckaan1/crtui/internal/core/enums/registrystatus"
 	"github.com/ksckaan1/crtui/internal/core/models"
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
@@ -59,28 +60,37 @@ func (r *RegistryClient) GetRegistryInfo(ctx context.Context) (*models.Registry,
 	}
 	defer resp.Body.Close()
 
+	registry := &models.Registry{
+		BaseURL:  r.baseURL,
+		Username: r.username,
+		Status:   registrystatus.Offline,
+	}
+
+	registry.Took = time.Since(startTime)
+
+	registry.SupportsHTTP3 = strings.Contains(resp.Header().Get("alt-svc"), "h3=")
+	r.SetTransport(registry.SupportsHTTP3)
+
+	if resp.StatusCode() == http.StatusOK {
+		registry.Status = registrystatus.Online
+	}
+
+	if resp.StatusCode() == http.StatusUnauthorized {
+		registry.Status = registrystatus.Unauth
+	}
+
 	registryType := resp.Header().Get("docker-distribution-api-version")
 
 	if registryType != "registry/2.0" {
-		return nil, fmt.Errorf("invalid registry server: %s", registryType)
+		registry.Status = registrystatus.Invalid
+
+		return registry, nil
 	}
 
-	supportsHTTP3 := strings.Contains(resp.Header().Get("alt-svc"), "h3=")
-	r.setTransport(supportsHTTP3)
-
-	authSuccess := resp.StatusCode() == http.StatusOK
-	took := time.Since(startTime)
-
-	return &models.Registry{
-		BaseURL:       r.baseURL,
-		SupportsHTTP3: supportsHTTP3,
-		Username:      r.username,
-		AuthSuccess:   authSuccess,
-		Took:          took,
-	}, nil
+	return registry, nil
 }
 
-func (r *RegistryClient) setTransport(supportsHTTP3 bool) {
+func (r *RegistryClient) SetTransport(supportsHTTP3 bool) {
 	if supportsHTTP3 && !r.supportsHTTP3 {
 		r.supportsHTTP3 = supportsHTTP3
 		r.client = r.client.SetTransport(r.http3Transport)

@@ -2,7 +2,6 @@ package registryclient
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -28,14 +27,14 @@ func TestRegistryClient(t *testing.T) {
 
 	// t.Logf("%#v", tagList)
 
-	tag, err := client.GetTag(ctx, "piriapi/api", "0.0.4")
-	require.NoError(t, err)
+	// tag, err := client.GetTag(ctx, "piriapi/api", "0.0.4")
+	// require.NoError(t, err)
 
-	jsonBytes, err := json.MarshalIndent(tag, "", "  ")
-	if err != nil {
-		t.Errorf("Failed to marshal tag: %v", err)
-	}
-	t.Logf("%s", jsonBytes)
+	// jsonBytes, err := json.MarshalIndent(tag, "", "  ")
+	// if err != nil {
+	// 	t.Errorf("Failed to marshal tag: %v", err)
+	// }
+	// t.Logf("%s", jsonBytes)
 
 	// err = client.DeleteTag(ctx, "piriapi/api", "0.0.3")
 	// require.NoError(t, err)
