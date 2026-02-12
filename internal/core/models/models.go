@@ -1,12 +1,16 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"github.com/ksckaan1/crtui/internal/core/enums/registrystatus"
+)
 
 type Registry struct {
 	BaseURL       string
 	SupportsHTTP3 bool
 	Username      string
-	AuthSuccess   bool
+	Status        registrystatus.RegistryStatus
 	Took          time.Duration
 }
 
