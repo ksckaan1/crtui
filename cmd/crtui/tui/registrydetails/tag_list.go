@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/ksckaan1/crtui/cmd/crtui/tui/ui"
 )
 
 type Tag struct {
@@ -40,7 +41,7 @@ func (d *tagListDelegate) Render(w io.Writer, m list.Model, index int, item list
 	if isSelected {
 		itemStyle = itemStyle.
 			Border(lipgloss.ThickBorder(), false, false, false, true).
-			BorderLeftForeground(lipgloss.Color("#FFFFFF")).
+			BorderLeftForeground(ui.PrimaryColor).
 			Faint(false)
 	}
 

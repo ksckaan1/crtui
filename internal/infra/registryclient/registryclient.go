@@ -157,6 +157,8 @@ func (r *RegistryClient) ListTags(ctx context.Context, repository string) (*mode
 		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode())
 	}
 
+	sortTags(result.Tags)
+
 	return &models.TagList{
 		Name: result.Name,
 		Tags: result.Tags,

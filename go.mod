@@ -7,6 +7,7 @@ require (
 	github.com/charmbracelet/bubbletea v1.3.10
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/docker/cli v29.2.1+incompatible
+	github.com/hashicorp/go-version v1.8.0
 	github.com/quic-go/quic-go v0.59.0
 	github.com/samber/lo v1.52.0
 	github.com/stretchr/testify v1.11.1

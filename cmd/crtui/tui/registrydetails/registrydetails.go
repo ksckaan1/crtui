@@ -3,7 +3,6 @@ package registrydetails
 import (
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
@@ -95,21 +94,7 @@ func NewRegistryDetails(registry *Registry, backModel tea.Model) *Model {
 	rc.SetTransport(registry.SupportsHTTPS3)
 
 	sp := spinner.New()
-	sp.Spinner = spinner.Spinner{
-		// white \033[37m
-		// magenta \033[35m
-		// reset \033[0m
-		Frames: []string{
-			"\033[35ml\033[37moading\033[0m",         // [l]oading
-			"\033[37ml\033[35mo\033[37mading\033[0m", // l[o]ading
-			"\033[37mlo\033[35ma\033[37mding\033[0m", // lo[a]ding
-			"\033[37mloa\033[35md\033[37ming\033[0m", // loa[d]ing
-			"\033[37mload\033[35mi\033[37mng\033[0m", // load[i]ng
-			"\033[37mloadi\033[35mn\033[37mg\033[0m", // loadi[n]g
-			"\033[37mloadin\033[35mg\033[0m",         // loadin[g]
-		},
-		FPS: time.Second / 7,
-	}
+	sp.Spinner = ui.LoadingSpinner
 
 	repositoryList := list.New(nil, list.NewDefaultDelegate(), 0, 0)
 	repositoryList.SetShowTitle(false)

@@ -89,7 +89,7 @@ func (d *registryListDelegate) Render(w io.Writer, m list.Model, index int, item
 
 	if isSelected {
 		leftBorder = leftBorder.Border(lipgloss.ThickBorder(), false, false, false, true).
-			BorderLeftForeground(lipgloss.Color("#FFFFFF"))
+			BorderLeftForeground(ui.PrimaryColor)
 	}
 
 	out = leftBorder.Render(out)
