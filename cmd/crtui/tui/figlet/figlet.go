@@ -2,9 +2,10 @@ package figlet
 
 import (
 	"github.com/charmbracelet/lipgloss"
+	"github.com/ksckaan1/crtui/cmd/crtui/tui/ui"
 )
 
-var Figlet = lipgloss.NewStyle().Faint(true).Render(FigletText)
+var Figlet = lipgloss.NewStyle().Foreground(ui.PrimaryColor).Faint(false).Render(FigletText)
 
 const FigletText = `  ____ ____ _____ _   _ ___
 / ____|  _ \_   _| | | |_ _|
