@@ -12,14 +12,15 @@ import (
 
 type Repository struct {
 	Name string
-	Open bool
 }
 
 func (i *Repository) Title() string       { return i.Name }
 func (i *Repository) Description() string { return i.Name }
 func (i *Repository) FilterValue() string { return i.Name }
 
-type repositoryListDelegate struct{}
+type repositoryListDelegate struct {
+	selectedRepository *string
+}
 
 func (d *repositoryListDelegate) Height() int                             { return 2 }
 func (d *repositoryListDelegate) Spacing() int                            { return 0 }
@@ -46,5 +47,15 @@ func (d *repositoryListDelegate) Render(w io.Writer, m list.Model, index int, it
 			Faint(false)
 	}
 
-	fmt.Fprint(w, itemStyle.Render(r.Name))
+	name := r.Name
+
+	if d.selectedRepository != nil && *d.selectedRepository == r.Name {
+		name = lipgloss.JoinHorizontal(
+			lipgloss.Top,
+			lipgloss.NewStyle().Width(m.Width()-3).Render(name),
+			lipgloss.NewStyle().Foreground(ui.PrimaryColor).Render("→"),
+		)
+	}
+
+	fmt.Fprint(w, itemStyle.Render(name))
 }
