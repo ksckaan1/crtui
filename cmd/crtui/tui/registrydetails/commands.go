@@ -33,7 +33,7 @@ func (m *Model) fetchTagList() tea.Cmd {
 	return func() tea.Msg {
 		ctx := context.Background()
 
-		tagList, err := m.rc.ListTags(ctx, m.selectedRepository)
+		tagList, err := m.rc.ListTags(ctx, *m.selectedRepository)
 
 		return tagListResult{
 			tagList: tagList.Tags,

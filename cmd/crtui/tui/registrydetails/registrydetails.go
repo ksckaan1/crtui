@@ -26,6 +26,7 @@ type Registry struct {
 type listKeyMap struct {
 	refresh    key.Binding
 	selectItem key.Binding
+	switchPane key.Binding
 	filter     key.Binding
 	esc        key.Binding
 	quit       key.Binding
@@ -40,6 +41,10 @@ func newListKeyMap() *listKeyMap {
 		selectItem: key.NewBinding(
 			key.WithKeys("enter"),
 			key.WithHelp("enter", "Select item"),
+		),
+		switchPane: key.NewBinding(
+			key.WithKeys("tab"),
+			key.WithHelp("tab", "Switch pane"),
 		),
 		filter: key.NewBinding(
 			key.WithKeys("/"),
@@ -72,16 +77,18 @@ type Model struct {
 
 	// Sizing
 	width, height int
+	paneWidth     int
 
 	// States
 	activePaneIndex int
 	// repositories
 	isRepositoriesLoading bool
 	repositoryList        []*Repository
-	selectedRepository    string
+	selectedRepository    *string
 	// tags
 	isTagsLoading bool
 	tagList       []*Tag
+	selectedTag   string
 }
 
 func NewRegistryDetails(registry *Registry, backModel tea.Model) *Model {
@@ -119,11 +126,16 @@ func NewRegistryDetails(registry *Registry, backModel tea.Model) *Model {
 
 		isRepositoriesLoading: true,
 		isTagsLoading:         false,
+
+		selectedRepository: new(""),
 	}
 }
 
 func (m *Model) Init() tea.Cmd {
-	m.repositoryListUI.SetDelegate(&repositoryListDelegate{})
+	m.repositoryListUI.SetDelegate(&repositoryListDelegate{
+		selectedRepository: m.selectedRepository,
+	})
+
 	m.tagListUI.SetDelegate(&tagListDelegate{})
 
 	cmds := []tea.Cmd{
@@ -152,22 +164,21 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.repositoryListUI.FilterState() != list.Filtering &&
 			len(m.repositoryList) > 1:
 			if m.activePaneIndex == 0 {
-				m.selectedRepository = m.repositoryList[m.repositoryListUI.Index()].Name
+				*m.selectedRepository = m.repositoryList[m.repositoryListUI.Index()].Name
 				m.activePaneIndex = 1
 				m.isTagsLoading = true
 
-				return m, m.fetchTagList()
+				return m, tea.Batch(m.fetchTagList(), tea.WindowSize())
 			}
 
-		case msg.String() == "left" && m.selectedRepository != "":
-			if m.activePaneIndex != 0 {
-				m.activePaneIndex = 0
+			if m.activePaneIndex == 1 {
+				m.selectedTag = m.tagList[m.tagListUI.Index()].Name
 			}
 
-		case msg.String() == "right" && m.selectedRepository != "":
-			if m.activePaneIndex != 1 {
-				m.activePaneIndex = 1
-			}
+		case key.Matches(msg, m.keys.switchPane) &&
+			*m.selectedRepository != "" &&
+			m.repositoryListUI.FilterState() != list.Filtering:
+			m.activePaneIndex = 1 - (m.activePaneIndex / 1)
 
 		case key.Matches(msg, m.keys.quit):
 			return m, tea.Quit
@@ -175,10 +186,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.WindowSizeMsg:
 		m.width, m.height = msg.Width, msg.Height
+		m.paneWidth = ((m.width - 4) / 2) - 1
+		if *m.selectedRepository == "" {
+			m.paneWidth = m.width - 4
+		}
 		m.repositoryListUI.SetHeight(m.height - 12)
-		m.repositoryListUI.SetWidth(m.width - 5)
+		m.repositoryListUI.SetWidth(m.paneWidth - 1)
 		m.tagListUI.SetHeight(m.height - 12)
-		m.tagListUI.SetWidth(m.width - 5)
+		m.tagListUI.SetWidth(m.paneWidth - 1)
 
 	case repositoryListResult:
 		m.isRepositoriesLoading = false
@@ -236,7 +251,7 @@ func (m *Model) View() string {
 	out := lipgloss.NewStyle().Padding(1).Render(lipgloss.JoinVertical(
 		lipgloss.Top,
 		m.drawHeader(m.width-4, 5),
-		m.drawContent(m.width-4, m.height-10),
+		m.drawContent(m.height-10),
 		statusBar,
 	))
 
@@ -255,10 +270,10 @@ func (m *Model) drawHeader(width, height int) string {
 			Height: height,
 			Keys: []key.Binding{
 				key.NewBinding(key.WithHelp("↑ ↓", "Navigate")),
-				key.NewBinding(key.WithHelp("← →", "Switch Pane")),
 				m.keys.selectItem,
 				m.keys.refresh,
 				m.keys.filter,
+				m.keys.switchPane,
 				m.keys.esc,
 				m.keys.quit,
 			},
@@ -268,18 +283,27 @@ func (m *Model) drawHeader(width, height int) string {
 	return out
 }
 
-func (m *Model) drawContent(width, height int) string {
-	paneWidth := (width / 2) - 1
-	if m.selectedRepository == "" {
-		paneWidth = width
+func (m *Model) drawContent(height int) string {
+	repositoriesTitle := "Repository"
+	if m.repositoryListUI.IsFiltered() {
+		repositoriesTitle += lipgloss.NewStyle().
+			Foreground(ui.PrimaryColor).
+			Render(" /" + m.repositoryListUI.FilterValue())
+	}
+
+	tagsTitle := "Tags"
+	if m.tagListUI.IsFiltered() {
+		tagsTitle += lipgloss.NewStyle().
+			Foreground(ui.PrimaryColor).
+			Render(" /" + m.tagListUI.FilterValue())
 	}
 
 	out := lipgloss.JoinHorizontal(
 		lipgloss.Top,
 		ui.NewWindow(ui.WindowConfig{
-			Width:     paneWidth,
+			Width:     m.paneWidth,
 			Height:    height,
-			LeftTitle: "Repositories",
+			LeftTitle: repositoriesTitle,
 			RightTitle: lo.Ternary(
 				m.isRepositoriesLoading,
 				m.spinner.View(),
@@ -297,11 +321,11 @@ func (m *Model) drawContent(width, height int) string {
 			),
 		}),
 		lo.Ternary(
-			m.selectedRepository != "",
+			*m.selectedRepository != "",
 			ui.NewWindow(ui.WindowConfig{
-				Width:     paneWidth,
+				Width:     m.paneWidth,
 				Height:    height,
-				LeftTitle: "Tags",
+				LeftTitle: tagsTitle,
 				RightTitle: lo.Ternary(
 					m.isTagsLoading,
 					m.spinner.View(),
