@@ -17,7 +17,7 @@ type WindowConfig struct {
 func NewWindow(cfg WindowConfig) string {
 	leftTitleColor := cmp.Or(cfg.LeftTitleColor, lipgloss.Color("#959595"))
 	rightTitleColor := cmp.Or(cfg.RightTitleColor, lipgloss.Color("#959595"))
-	borderColor := cmp.Or(cfg.BorderColor, lipgloss.Color("#383838"))
+	borderColor := cmp.Or(cfg.BorderColor, SecondaryColor)
 
 	border := lipgloss.RoundedBorder()
 
