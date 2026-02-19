@@ -20,7 +20,7 @@ import (
 
 type RegistryClient struct {
 	client           *resty.Client
-	baseURL          string
+	BaseURL          string
 	username         string
 	password         string
 	http3Transport   *http3.Transport
@@ -35,7 +35,7 @@ func New(baseURL, username, password string) *RegistryClient {
 
 	return &RegistryClient{
 		client:   client,
-		baseURL:  baseURL,
+		BaseURL:  baseURL,
 		username: username,
 		password: password,
 		defaultTransport: &http.Transport{
@@ -61,7 +61,7 @@ func (r *RegistryClient) GetRegistryInfo(ctx context.Context) (*models.Registry,
 	defer resp.Body.Close()
 
 	registry := &models.Registry{
-		BaseURL:  r.baseURL,
+		BaseURL:  r.BaseURL,
 		Username: r.username,
 		Status:   registrystatus.Offline,
 	}
@@ -256,6 +256,10 @@ func (r *RegistryClient) processImageIndex(ctx context.Context, repositoryName, 
 	}
 
 	for _, manifest := range parsedBody.Manifests {
+		if manifest.Platform.OS == "unknown" {
+			continue
+		}
+
 		t, err := r.getManifestByDigest(ctx, repositoryName, manifest.Digest)
 		if err != nil {
 			return nil, fmt.Errorf("getManifestByDigest: %w", err)
@@ -337,14 +341,17 @@ func (r *RegistryClient) getManifestByDigest(ctx context.Context, repositoryName
 					Created:      configBlob.Created,
 					History: lo.Map(configBlob.History, func(item blobHistory, _ int) models.History {
 						return models.History{
-							Created:   item.Created,
-							CreatedBy: item.CreatedBy,
-							Comment:   item.Comment,
-							Author:    item.Author,
+							Created:    item.Created,
+							CreatedBy:  item.CreatedBy,
+							Comment:    item.Comment,
+							Author:     item.Author,
+							EmptyLayer: item.EmptyLayer,
 						}
 					}),
+					Cmd:        configBlob.Config.Cmd,
 					Entrypoint: configBlob.Config.Entrypoint,
 					Env:        configBlob.Config.Env,
+					WorkingDir: configBlob.Config.WorkingDir,
 					Labels:     configBlob.Config.Labels,
 					User:       configBlob.Config.User,
 				},

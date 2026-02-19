@@ -52,10 +52,11 @@ type blob struct {
 }
 
 type blobHistory struct {
-	Author    string    `json:"author"`
-	Created   time.Time `json:"created"`
-	CreatedBy string    `json:"created_by"`
-	Comment   string    `json:"comment"`
+	Author     string    `json:"author"`
+	Created    time.Time `json:"created"`
+	CreatedBy  string    `json:"created_by"`
+	Comment    string    `json:"comment"`
+	EmptyLayer bool      `json:"empty_layer"`
 }
 
 type blobRootFS struct {
@@ -65,7 +66,9 @@ type blobRootFS struct {
 
 type blobConfig struct {
 	Entrypoint []string          `json:"Entrypoint"`
+	Cmd        []string          `json:"Cmd"`
 	Env        []string          `json:"Env"`
+	WorkingDir string            `json:"WorkingDir"`
 	Labels     map[string]string `json:"Labels"`
 	User       string            `json:"User"`
 }

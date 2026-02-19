@@ -39,16 +39,19 @@ type Config struct {
 	Created      time.Time
 	History      []History
 	Entrypoint   []string
+	Cmd          []string
 	Env          []string
+	WorkingDir   string
 	Labels       map[string]string
 	User         string
 }
 
 type History struct {
-	Author    string
-	Created   time.Time
-	CreatedBy string
-	Comment   string
+	Author     string
+	Created    time.Time
+	CreatedBy  string
+	Comment    string
+	EmptyLayer bool
 }
 
 type Layer struct {
