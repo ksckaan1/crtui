@@ -222,6 +222,7 @@ func (r *RegistryClient) processImageManifest(ctx context.Context, repositoryNam
 							Author:    item.Author,
 						}
 					}),
+					RootFS:     models.RootFS(configBlob.RootFS),
 					Entrypoint: configBlob.Config.Entrypoint,
 					Env:        configBlob.Config.Env,
 					Labels:     configBlob.Config.Labels,
@@ -348,6 +349,7 @@ func (r *RegistryClient) getManifestByDigest(ctx context.Context, repositoryName
 							EmptyLayer: item.EmptyLayer,
 						}
 					}),
+					RootFS:     models.RootFS(configBlob.RootFS),
 					Cmd:        configBlob.Config.Cmd,
 					Entrypoint: configBlob.Config.Entrypoint,
 					Env:        configBlob.Config.Env,

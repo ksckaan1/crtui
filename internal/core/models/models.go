@@ -38,6 +38,7 @@ type Config struct {
 	Author       string
 	Created      time.Time
 	History      []History
+	RootFS       RootFS
 	Entrypoint   []string
 	Cmd          []string
 	Env          []string
@@ -58,4 +59,9 @@ type Layer struct {
 	MediaType string
 	Size      int
 	Digest    string
+}
+
+type RootFS struct {
+	Type    string
+	DiffIDs []string
 }
