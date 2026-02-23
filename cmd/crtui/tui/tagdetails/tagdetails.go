@@ -10,6 +10,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/ksckaan1/crtui/cmd/crtui/tui/figlet"
+	"github.com/ksckaan1/crtui/cmd/crtui/tui/nav"
 	"github.com/ksckaan1/crtui/cmd/crtui/tui/ui"
 	"github.com/ksckaan1/crtui/internal/core/models"
 	"github.com/ksckaan1/crtui/internal/infra/registryclient"
@@ -17,12 +18,9 @@ import (
 )
 
 type listKeyMap struct {
-	refresh    key.Binding
-	selectItem key.Binding
-	switchPane key.Binding
-	filter     key.Binding
-	esc        key.Binding
-	quit       key.Binding
+	refresh key.Binding
+	esc     key.Binding
+	quit    key.Binding
 }
 
 func newListKeyMap() *listKeyMap {
@@ -30,18 +28,6 @@ func newListKeyMap() *listKeyMap {
 		refresh: key.NewBinding(
 			key.WithKeys("r"),
 			key.WithHelp("r", "Refresh"),
-		),
-		selectItem: key.NewBinding(
-			key.WithKeys("enter"),
-			key.WithHelp("enter", "Select item"),
-		),
-		switchPane: key.NewBinding(
-			key.WithKeys("tab"),
-			key.WithHelp("tab", "Switch pane"),
-		),
-		filter: key.NewBinding(
-			key.WithKeys("/"),
-			key.WithHelp("/", "Filter"),
 		),
 		esc: key.NewBinding(
 			key.WithKeys("esc"),
@@ -61,6 +47,7 @@ type Model struct {
 	keys       *listKeyMap
 	spinner    spinner.Model
 	platformVP viewport.Model
+	backModel  tea.Model
 
 	width, height int
 
@@ -74,7 +61,7 @@ type Model struct {
 	activeTabIndex int
 }
 
-func NewModel(rc *registryclient.RegistryClient, repositoryName, tagName string) *Model {
+func NewModel(rc *registryclient.RegistryClient, repositoryName, tagName string, backModel tea.Model) *Model {
 	sp := spinner.New()
 	sp.Spinner = ui.LoadingSpinner
 
@@ -88,6 +75,7 @@ func NewModel(rc *registryclient.RegistryClient, repositoryName, tagName string)
 		keys:           newListKeyMap(),
 		spinner:        sp,
 		platformVP:     platformVP,
+		backModel:      backModel,
 		host:           host,
 		repositoryName: repositoryName,
 		tagName:        tagName,
@@ -108,6 +96,13 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
+		case key.Matches(msg, m.keys.esc):
+			return nav.Navigate(m.backModel)
+
+		case key.Matches(msg, m.keys.refresh):
+			m.isLoaded = false
+			return m, m.fetchTag()
+
 		case msg.String() == "left" && m.tag != nil:
 			m.activeTabIndex--
 			if m.activeTabIndex < 0 {
@@ -129,7 +124,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width, m.height = msg.Width, msg.Height
 		m.platformVP.Width = m.width - 4
-		m.platformVP.Height = m.height - 19
+		m.platformVP.Height = m.height - 17
 		m.drawPlatformContent()
 
 	case tagMsg:
@@ -163,18 +158,18 @@ func (m *Model) View() string {
 		rightTitle = m.spinner.View()
 	}
 
-	platformWindow := ""
-
-	if m.tag != nil {
-		platformWindow = ui.NewTabbedWindow(ui.TabbedWindowConfig{
-			Width:          m.width - 4,
-			Height:         m.height - 18,
-			Content:        m.platformVP.View(),
-			ActiveTabIndex: m.activeTabIndex,
-			Tabs: lo.Map(m.tag.Platforms, func(item models.Platform, _ int) string {
-				return fmt.Sprintf("%s/%s", item.Config.OS, item.Config.Architecture)
+	if m.tag == nil {
+		return lipgloss.NewStyle().Padding(1).Render(lipgloss.JoinVertical(
+			lipgloss.Top,
+			m.drawHeader(m.width-4, 5),
+			ui.NewWindow(ui.WindowConfig{
+				Width:      m.width - 4,
+				Height:     m.height - 10,
+				RightTitle: rightTitle,
+				Content:    m.drawTop(m.width-4, 5),
 			}),
-		})
+			statusBar,
+		))
 	}
 
 	out := lipgloss.NewStyle().Padding(1).Render(lipgloss.JoinVertical(
@@ -182,11 +177,19 @@ func (m *Model) View() string {
 		m.drawHeader(m.width-4, 5),
 		ui.NewWindow(ui.WindowConfig{
 			Width:      m.width - 4,
-			Height:     5,
+			Height:     3,
 			RightTitle: rightTitle,
 			Content:    m.drawTop(m.width-4, 5),
 		}),
-		platformWindow,
+		ui.NewTabbedWindow(ui.TabbedWindowConfig{
+			Width:          m.width - 4,
+			Height:         m.height - 16,
+			Content:        m.platformVP.View(),
+			ActiveTabIndex: m.activeTabIndex,
+			Tabs: lo.Map(m.tag.Platforms, func(item models.Platform, _ int) string {
+				return fmt.Sprintf("%s/%s", item.Config.OS, item.Config.Architecture)
+			}),
+		}),
 		statusBar,
 	))
 
@@ -205,10 +208,8 @@ func (m *Model) drawHeader(width, height int) string {
 			Height: height,
 			Keys: []key.Binding{
 				key.NewBinding(key.WithHelp("↑ ↓", "Scroll")),
-				m.keys.selectItem,
+				key.NewBinding(key.WithHelp("← →", "Switch Tabs")),
 				m.keys.refresh,
-				m.keys.filter,
-				m.keys.switchPane,
 				m.keys.esc,
 				m.keys.quit,
 			},
@@ -219,19 +220,51 @@ func (m *Model) drawHeader(width, height int) string {
 }
 
 func (m *Model) drawTop(width, height int) string {
-	return lipgloss.JoinVertical(
-		lipgloss.Top,
+	if m.tag == nil {
+		return ""
+	}
+
+	totalSizeBytes := lo.SumBy(m.tag.Platforms, func(item models.Platform) int {
+		return lo.SumBy(item.Layers, func(layer models.Layer) int {
+			return layer.Size
+		})
+	})
+
+	return lipgloss.JoinHorizontal(lipgloss.Top,
 		lipgloss.NewStyle().
-			Faint(true).
-			Render("Pull Command:"),
+			Width(m.width/2).
+			Render(
+				lipgloss.JoinVertical(
+					lipgloss.Top,
+					lipgloss.NewStyle().
+						Faint(true).
+						Render("Name:"),
+					lipgloss.NewStyle().
+						Bold(true).
+						Render(fmt.Sprintf(
+							"%s:%s",
+							m.repositoryName,
+							m.tagName,
+						)),
+				),
+			),
 		lipgloss.NewStyle().
-			Bold(true).
-			Render(fmt.Sprintf(
-				"docker pull %s/%s:%s",
-				m.host,
-				m.repositoryName,
-				m.tagName,
-			)),
+			Width(m.width/2).
+			Render(
+				lipgloss.JoinVertical(
+					lipgloss.Top,
+					lipgloss.NewStyle().
+						Faint(true).
+						Render("Total Size:"),
+					lipgloss.NewStyle().
+						Bold(true).
+						Render(fmt.Sprintf(
+							"%s (%dB)",
+							humanReadableSize(totalSizeBytes),
+							totalSizeBytes,
+						)),
+				),
+			),
 	)
 }
 
@@ -276,6 +309,11 @@ func (m *Model) drawPlatformContent() {
 		m.drawLayers(),
 		m.drawHistory(),
 	)
+
+	rootFS := m.drawRootFS()
+	if rootFS != "" {
+		strs = append(strs, rootFS)
+	}
 
 	m.platformVP.SetContent(lipgloss.JoinVertical(lipgloss.Top, strs...))
 }

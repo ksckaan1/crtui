@@ -167,7 +167,7 @@ func (m *Model) drawHeader(width, height int) string {
 		figlet.Figlet,
 		" ",
 		ui.NewKeysWindow(ui.KeysWindowConfig{
-			Width:  width - 50,
+			Width:  width - 48,
 			Height: height,
 			Keys: []key.Binding{
 				key.NewBinding(key.WithHelp("↑/↓", "Navigate")),

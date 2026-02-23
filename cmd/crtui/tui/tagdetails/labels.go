@@ -2,9 +2,11 @@ package tagdetails
 
 import (
 	"maps"
+	"slices"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/ksckaan1/crtui/cmd/crtui/tui/ui"
+	"github.com/samber/lo"
 )
 
 func (m *Model) drawLabels() string {
@@ -77,8 +79,11 @@ func (m *Model) drawLabels() string {
 		rows = append(rows, m.drawGrid(row4, 20, maxWidth))
 	}
 
-	for k, v := range labelMap {
-		row5 = append(row5, [2]any{k, v})
+	sortedLabelKeys := lo.MapToSlice(labelMap, func(k, _ string) string { return k })
+	slices.Sort(sortedLabelKeys)
+
+	for _, k := range sortedLabelKeys {
+		row5 = append(row5, [2]any{k, labelMap[k]})
 	}
 
 	if len(row5) > 0 {

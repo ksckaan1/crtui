@@ -90,7 +90,7 @@ func (m *Model) drawHistory() string {
 				lipgloss.NewStyle().
 					Faint(true).
 					Bold(true).
-					Render(fmt.Sprintf("#%d", i+1)),
+					Render(fmt.Sprintf("#%03d", i+1)),
 				" ",
 				lipgloss.JoinVertical(lipgloss.Top,
 					stepElems...,

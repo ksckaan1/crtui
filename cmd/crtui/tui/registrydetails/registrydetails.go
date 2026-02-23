@@ -11,6 +11,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/ksckaan1/crtui/cmd/crtui/tui/figlet"
 	"github.com/ksckaan1/crtui/cmd/crtui/tui/nav"
+	"github.com/ksckaan1/crtui/cmd/crtui/tui/tagdetails"
 	"github.com/ksckaan1/crtui/cmd/crtui/tui/ui"
 	"github.com/ksckaan1/crtui/internal/infra/registryclient"
 	"github.com/samber/lo"
@@ -162,6 +163,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case key.Matches(msg, m.keys.selectItem) &&
 			m.repositoryListUI.FilterState() != list.Filtering &&
+			m.tagListUI.FilterState() != list.Filtering &&
 			len(m.repositoryList) > 1:
 			if m.activePaneIndex == 0 {
 				*m.selectedRepository = m.repositoryList[m.repositoryListUI.Index()].Name
@@ -173,6 +175,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			if m.activePaneIndex == 1 {
 				m.selectedTag = m.tagList[m.tagListUI.Index()].Name
+				return nav.Navigate(
+					tagdetails.NewModel(
+						m.rc,
+						*m.selectedRepository,
+						m.selectedTag,
+						m,
+					),
+				)
 			}
 
 		case key.Matches(msg, m.keys.switchPane) &&
@@ -266,7 +276,7 @@ func (m *Model) drawHeader(width, height int) string {
 		figlet.Figlet,
 		" ",
 		ui.NewKeysWindow(ui.KeysWindowConfig{
-			Width:  width - 29,
+			Width:  width - 27,
 			Height: height,
 			Keys: []key.Binding{
 				key.NewBinding(key.WithHelp("↑ ↓", "Navigate")),
