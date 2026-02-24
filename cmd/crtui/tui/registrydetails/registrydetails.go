@@ -190,6 +190,20 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.repositoryListUI.FilterState() != list.Filtering:
 			m.activePaneIndex = 1 - (m.activePaneIndex / 1)
 
+		case key.Matches(msg, m.keys.refresh) &&
+			m.repositoryListUI.FilterState() != list.Filtering &&
+			m.tagListUI.FilterState() != list.Filtering:
+
+			if m.activePaneIndex == 0 && !m.isRepositoriesLoading {
+				m.isRepositoriesLoading = true
+				return m, tea.Batch(m.fetchRepositoryList(), tea.WindowSize())
+			}
+
+			if m.activePaneIndex == 1 && !m.isTagsLoading {
+				m.isTagsLoading = true
+				return m, tea.Batch(m.fetchTagList(), tea.WindowSize())
+			}
+
 		case key.Matches(msg, m.keys.quit):
 			return m, tea.Quit
 		}
