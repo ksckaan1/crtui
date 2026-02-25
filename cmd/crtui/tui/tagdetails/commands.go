@@ -3,7 +3,7 @@ package tagdetails
 import (
 	"context"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	"github.com/ksckaan1/crtui/internal/core/models"
 )
 

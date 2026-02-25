@@ -1,6 +1,6 @@
 package nav
 
-import tea "github.com/charmbracelet/bubbletea"
+import tea "charm.land/bubbletea/v2"
 
 func Navigate(m tea.Model) (tea.Model, tea.Cmd) {
 	return m, m.Init()

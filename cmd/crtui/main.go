@@ -4,7 +4,7 @@ import (
 	"log"
 	"strings"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	"github.com/docker/cli/cli/config"
 	"github.com/ksckaan1/crtui/cmd/crtui/tui/registrylist"
 )
@@ -36,7 +36,7 @@ func main() {
 
 	registryListModel := registrylist.NewModel(registries)
 
-	program := tea.NewProgram(registryListModel, tea.WithAltScreen())
+	program := tea.NewProgram(registryListModel)
 	_, err = program.Run()
 	if err != nil {
 		log.Fatalf("program.Run: %v", err)

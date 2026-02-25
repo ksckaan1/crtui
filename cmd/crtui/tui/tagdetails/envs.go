@@ -3,12 +3,13 @@ package tagdetails
 import (
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
 	"github.com/ksckaan1/crtui/cmd/crtui/tui/ui"
+	"github.com/ksckaan1/crtui/internal/core/models"
 )
 
-func (m *Model) drawEnvs() string {
-	envs := m.tag.Platforms[m.activeTabIndex].Config.Env
+func (m *Model) drawEnvs(activePlatform models.Platform, width int) string {
+	envs := activePlatform.Config.Env
 
 	if len(envs) == 0 {
 		return ""
@@ -29,7 +30,7 @@ func (m *Model) drawEnvs() string {
 		}
 
 		strs = append(strs,
-			m.drawField(split[0], split[1], m.platformVP.Width-2),
+			m.drawField(split[0], split[1], width),
 			"",
 		)
 	}

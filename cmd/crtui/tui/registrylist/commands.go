@@ -3,7 +3,7 @@ package registrylist
 import (
 	"context"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	"github.com/ksckaan1/crtui/internal/core/enums/registrystatus"
 	"github.com/ksckaan1/crtui/internal/infra/registryclient"
 )

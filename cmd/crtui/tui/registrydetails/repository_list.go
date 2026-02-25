@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/charmbracelet/bubbles/list"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/list"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/ksckaan1/crtui/cmd/crtui/tui/ui"
 )
 
@@ -52,7 +52,7 @@ func (d *repositoryListDelegate) Render(w io.Writer, m list.Model, index int, it
 	if d.selectedRepository != nil && *d.selectedRepository == r.Name {
 		name = lipgloss.JoinHorizontal(
 			lipgloss.Top,
-			lipgloss.NewStyle().Width(m.Width()-3).Render(name),
+			lipgloss.NewStyle().Width(m.Width()-5).Render(name),
 			lipgloss.NewStyle().Foreground(ui.PrimaryColor).Render("→"),
 		)
 	}

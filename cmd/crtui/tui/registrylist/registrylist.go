@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/list"
-	"github.com/charmbracelet/bubbles/spinner"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/key"
+	"charm.land/bubbles/v2/list"
+	"charm.land/bubbles/v2/spinner"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/ksckaan1/crtui/cmd/crtui/tui/figlet"
 	"github.com/ksckaan1/crtui/cmd/crtui/tui/nav"
 	"github.com/ksckaan1/crtui/cmd/crtui/tui/registrydetails"
@@ -91,7 +91,7 @@ func (m *Model) Init() tea.Cmd {
 		},
 	})
 
-	cmds := []tea.Cmd{m.spinner.Tick, tea.WindowSize()}
+	cmds := []tea.Cmd{m.spinner.Tick, tea.RequestWindowSize}
 	cmds = append(cmds, m.fetchRegistries()...)
 
 	return tea.Batch(cmds...)
@@ -137,28 +137,37 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(spinnerCmd, listCmd)
 }
 
-func (m *Model) View() string {
-	s := &strings.Builder{}
+func (m *Model) View() tea.View {
+	v := tea.NewView("")
+	v.AltScreen = true
 
-	statusBar := ""
+	sb := &strings.Builder{}
 
-	out := lipgloss.NewStyle().Padding(1).Render(lipgloss.JoinVertical(
-		lipgloss.Top,
-		m.drawHeader(m.width-4, 5),
-		ui.NewWindow(ui.WindowConfig{
-			Width:       m.width - 4,
-			Height:      m.height - 10,
-			LeftTitle:   "Container Registries",
-			RightTitle:  ui.CountKind(len(m.registries), "registry", "registries"),
-			Content:     m.list.View(),
-			BorderColor: lipgloss.Color("#FFFFFF"),
-		}),
-		statusBar,
-	))
+	statusBar := "STATUS"
 
-	fmt.Fprint(s, out)
+	out := lipgloss.NewStyle().
+		Padding(1).
+		Render(
+			lipgloss.JoinVertical(
+				lipgloss.Top,
+				m.drawHeader(m.width-4, 6),
+				ui.NewWindow(ui.WindowConfig{
+					Width:       m.width - 2,
+					Height:      m.height - 8,
+					LeftTitle:   "Container Registries",
+					RightTitle:  ui.CountKind(len(m.registries), "registry", "registries"),
+					Content:     m.list.View(),
+					BorderColor: lipgloss.Color("#FFFFFF"),
+				}),
+				statusBar,
+			),
+		)
 
-	return s.String()
+	fmt.Fprint(sb, out)
+
+	v.SetContent(sb.String())
+
+	return v
 }
 
 func (m *Model) drawHeader(width, height int) string {
@@ -167,7 +176,7 @@ func (m *Model) drawHeader(width, height int) string {
 		figlet.Figlet,
 		" ",
 		ui.NewKeysWindow(ui.KeysWindowConfig{
-			Width:  width - 48,
+			Width:  width - 44,
 			Height: height,
 			Keys: []key.Binding{
 				key.NewBinding(key.WithHelp("↑/↓", "Navigate")),

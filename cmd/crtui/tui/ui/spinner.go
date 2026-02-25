@@ -3,7 +3,7 @@ package ui
 import (
 	"time"
 
-	"github.com/charmbracelet/bubbles/spinner"
+	"charm.land/bubbles/v2/spinner"
 )
 
 var LoadingSpinner = spinner.Spinner{

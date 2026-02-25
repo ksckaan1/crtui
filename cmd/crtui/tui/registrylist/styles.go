@@ -1,6 +1,6 @@
 package registrylist
 
-import "github.com/charmbracelet/lipgloss"
+import "charm.land/lipgloss/v2"
 
 var (
 	onlineDot = lipgloss.NewStyle().

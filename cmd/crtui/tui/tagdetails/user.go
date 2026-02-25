@@ -1,12 +1,13 @@
 package tagdetails
 
 import (
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
 	"github.com/ksckaan1/crtui/cmd/crtui/tui/ui"
+	"github.com/ksckaan1/crtui/internal/core/models"
 )
 
-func (m *Model) drawUser() string {
-	user := m.tag.Platforms[m.activeTabIndex].Config.User
+func (m *Model) drawUser(activePlatform models.Platform, width int) string {
+	user := activePlatform.Config.User
 
 	if user == "" {
 		return ""
@@ -17,11 +18,11 @@ func (m *Model) drawUser() string {
 			Foreground(ui.PrimaryColor).
 			Bold(true).
 			MarginBottom(1).
-			Width(m.platformVP.Width).
+			Width(width).
 			Render("❯ USER"),
 		lipgloss.NewStyle().
 			MarginBottom(1).
-			Width(m.platformVP.Width).
+			Width(width).
 			Render(user),
 	}
 

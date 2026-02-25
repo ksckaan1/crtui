@@ -4,19 +4,18 @@ import (
 	"maps"
 	"slices"
 
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
 	"github.com/ksckaan1/crtui/cmd/crtui/tui/ui"
+	"github.com/ksckaan1/crtui/internal/core/models"
 	"github.com/samber/lo"
 )
 
-func (m *Model) drawLabels() string {
-	labelMap := maps.Clone(m.tag.Platforms[m.activeTabIndex].Config.Labels)
+func (m *Model) drawLabels(activePlatform models.Platform, width int) string {
+	labelMap := maps.Clone(activePlatform.Config.Labels)
 
 	if len(labelMap) == 0 {
 		return ""
 	}
-
-	maxWidth := m.platformVP.Width - 2
 
 	var (
 		row1 [][2]any
@@ -64,19 +63,19 @@ func (m *Model) drawLabels() string {
 	rows := make([]string, 0)
 
 	if len(row1) > 0 {
-		rows = append(rows, m.drawGrid(row1, 20, maxWidth))
+		rows = append(rows, m.drawGrid(row1, 20, width))
 	}
 
 	if len(row2) > 0 {
-		rows = append(rows, m.drawGrid(row2, 20, maxWidth))
+		rows = append(rows, m.drawGrid(row2, 20, width))
 	}
 
 	if len(row3) > 0 {
-		rows = append(rows, m.drawGrid(row3, 20, maxWidth))
+		rows = append(rows, m.drawGrid(row3, 20, width))
 	}
 
 	if len(row4) > 0 {
-		rows = append(rows, m.drawGrid(row4, 20, maxWidth))
+		rows = append(rows, m.drawGrid(row4, 20, width))
 	}
 
 	sortedLabelKeys := lo.MapToSlice(labelMap, func(k, _ string) string { return k })
@@ -87,7 +86,7 @@ func (m *Model) drawLabels() string {
 	}
 
 	if len(row5) > 0 {
-		rows = append(rows, m.drawGrid(row5, maxWidth, maxWidth))
+		rows = append(rows, m.drawGrid(row5, width, width))
 	}
 
 	strs := []string{

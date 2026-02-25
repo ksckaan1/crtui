@@ -1,12 +1,13 @@
 package tagdetails
 
 import (
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
 	"github.com/ksckaan1/crtui/cmd/crtui/tui/ui"
+	"github.com/ksckaan1/crtui/internal/core/models"
 )
 
-func (m *Model) drawWorkingDir() string {
-	wd := m.tag.Platforms[m.activeTabIndex].Config.WorkingDir
+func (m *Model) drawWorkingDir(activePlatform models.Platform, width int) string {
+	wd := activePlatform.Config.WorkingDir
 
 	if wd == "" {
 		return ""
@@ -17,11 +18,11 @@ func (m *Model) drawWorkingDir() string {
 			Foreground(ui.PrimaryColor).
 			Bold(true).
 			MarginBottom(1).
-			Width(m.platformVP.Width).
+			Width(width).
 			Render("❯ WORKING DIR"),
 		lipgloss.NewStyle().
 			MarginBottom(1).
-			Width(m.platformVP.Width).
+			Width(width).
 			Render(wd),
 	}
 

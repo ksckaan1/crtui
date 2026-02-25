@@ -4,11 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/spinner"
-	"github.com/charmbracelet/bubbles/viewport"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/key"
+	"charm.land/bubbles/v2/spinner"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/ksckaan1/crtui/cmd/crtui/tui/figlet"
 	"github.com/ksckaan1/crtui/cmd/crtui/tui/nav"
 	"github.com/ksckaan1/crtui/cmd/crtui/tui/ui"
@@ -43,11 +42,11 @@ func newListKeyMap() *listKeyMap {
 var _ tea.Model = (*Model)(nil)
 
 type Model struct {
-	rc         *registryclient.RegistryClient
-	keys       *listKeyMap
-	spinner    spinner.Model
-	platformVP viewport.Model
-	backModel  tea.Model
+	rc              *registryclient.RegistryClient
+	keys            *listKeyMap
+	spinner         spinner.Model
+	backModel       tea.Model
+	platformsWindow *ui.TabbedWindow
 
 	width, height int
 
@@ -57,35 +56,35 @@ type Model struct {
 	tag            *models.Tag
 	err            error
 
-	isLoaded       bool
-	activeTabIndex int
+	isLoaded bool
 }
 
 func NewModel(rc *registryclient.RegistryClient, repositoryName, tagName string, backModel tea.Model) *Model {
 	sp := spinner.New()
 	sp.Spinner = ui.LoadingSpinner
 
-	platformVP := viewport.New(10, 10)
+	pw := ui.NewTabbedWindow()
 
 	host := strings.TrimPrefix(rc.BaseURL, "https://")
 	host = strings.TrimPrefix(host, "http://")
 
 	return &Model{
-		rc:             rc,
-		keys:           newListKeyMap(),
-		spinner:        sp,
-		platformVP:     platformVP,
-		backModel:      backModel,
-		host:           host,
-		repositoryName: repositoryName,
-		tagName:        tagName,
+		rc:        rc,
+		keys:      newListKeyMap(),
+		spinner:   sp,
+		backModel: backModel,
+
+		platformsWindow: pw,
+		host:            host,
+		repositoryName:  repositoryName,
+		tagName:         tagName,
 	}
 }
 
 func (m *Model) Init() tea.Cmd {
 	cmds := []tea.Cmd{
 		m.spinner.Tick,
-		tea.WindowSize(),
+		tea.RequestWindowSize,
 		m.fetchTag(),
 	}
 
@@ -103,35 +102,24 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.isLoaded = false
 			return m, m.fetchTag()
 
-		case msg.String() == "left" && m.tag != nil:
-			m.activeTabIndex--
-			if m.activeTabIndex < 0 {
-				m.activeTabIndex = len(m.tag.Platforms) - 1
-			}
-			m.drawPlatformContent()
-
-		case msg.String() == "right" && m.tag != nil:
-			m.activeTabIndex++
-			if m.activeTabIndex >= len(m.tag.Platforms) {
-				m.activeTabIndex = 0
-			}
-			m.drawPlatformContent()
-
 		case key.Matches(msg, m.keys.quit):
 			return m, tea.Quit
 		}
 
 	case tea.WindowSizeMsg:
 		m.width, m.height = msg.Width, msg.Height
-		m.platformVP.Width = m.width - 4
-		m.platformVP.Height = m.height - 17
-		m.drawPlatformContent()
+		m.platformsWindow.SetWidth(m.width - 2)
+		m.platformsWindow.SetHeight(m.height - 14)
 
 	case tagMsg:
 		m.tag = msg.tag
 		m.err = msg.err
 		m.isLoaded = true
-		m.drawPlatformContent()
+		if m.tag != nil {
+			m.platformsWindow.SetTabs(lo.Map(m.tag.Platforms, func(item models.Platform, _ int) string {
+				return fmt.Sprintf("%s/%s", item.Config.OS, item.Config.Architecture)
+			}))
+		}
 	}
 
 	cmds := []tea.Cmd{}
@@ -139,18 +127,21 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var spinnerCmd tea.Cmd
 	m.spinner, spinnerCmd = m.spinner.Update(msg)
 
-	var vpCmd tea.Cmd
-	m.platformVP, vpCmd = m.platformVP.Update(msg)
+	var platformsCmd tea.Cmd
+	m.platformsWindow, platformsCmd = m.platformsWindow.Update(msg)
 
-	cmds = append(cmds, spinnerCmd, vpCmd)
+	cmds = append(cmds, spinnerCmd, platformsCmd)
 
 	return m, tea.Batch(cmds...)
 }
 
-func (m *Model) View() string {
+func (m *Model) View() tea.View {
+	v := tea.NewView("")
+	v.AltScreen = true
+
 	sb := &strings.Builder{}
 
-	statusBar := ""
+	statusBar := "STATUS"
 
 	rightTitle := ""
 
@@ -159,43 +150,42 @@ func (m *Model) View() string {
 	}
 
 	if m.tag == nil {
-		return lipgloss.NewStyle().Padding(1).Render(lipgloss.JoinVertical(
+		v.SetContent(lipgloss.NewStyle().Padding(1).Render(lipgloss.JoinVertical(
 			lipgloss.Top,
-			m.drawHeader(m.width-4, 5),
+			m.drawHeader(m.width-2, 5),
 			ui.NewWindow(ui.WindowConfig{
-				Width:      m.width - 4,
-				Height:     m.height - 10,
+				Width:      m.width - 2,
+				Height:     m.height - 8,
 				RightTitle: rightTitle,
-				Content:    m.drawTop(m.width-4, 5),
+				Content:    m.drawTop(),
 			}),
 			statusBar,
-		))
+		)))
+		return v
 	}
 
-	out := lipgloss.NewStyle().Padding(1).Render(lipgloss.JoinVertical(
-		lipgloss.Top,
-		m.drawHeader(m.width-4, 5),
-		ui.NewWindow(ui.WindowConfig{
-			Width:      m.width - 4,
-			Height:     3,
-			RightTitle: rightTitle,
-			Content:    m.drawTop(m.width-4, 5),
-		}),
-		ui.NewTabbedWindow(ui.TabbedWindowConfig{
-			Width:          m.width - 4,
-			Height:         m.height - 16,
-			Content:        m.platformVP.View(),
-			ActiveTabIndex: m.activeTabIndex,
-			Tabs: lo.Map(m.tag.Platforms, func(item models.Platform, _ int) string {
-				return fmt.Sprintf("%s/%s", item.Config.OS, item.Config.Architecture)
+	m.platformsWindow.SetContent(m.drawPlatforms)
+
+	out := lipgloss.NewStyle().
+		Padding(1).
+		Render(lipgloss.JoinVertical(
+			lipgloss.Top,
+			m.drawHeader(m.width-2, 5),
+			ui.NewWindow(ui.WindowConfig{
+				Width:      m.width - 2,
+				Height:     3,
+				RightTitle: rightTitle,
+				Content:    m.drawTop(),
 			}),
-		}),
-		statusBar,
-	))
+			m.platformsWindow.View(),
+			statusBar,
+		))
 
 	fmt.Fprint(sb, out)
 
-	return sb.String()
+	v.SetContent(sb.String())
+
+	return v
 }
 
 func (m *Model) drawHeader(width, height int) string {
@@ -219,7 +209,7 @@ func (m *Model) drawHeader(width, height int) string {
 	return out
 }
 
-func (m *Model) drawTop(width, height int) string {
+func (m *Model) drawTop() string {
 	if m.tag == nil {
 		return ""
 	}
@@ -268,118 +258,53 @@ func (m *Model) drawTop(width, height int) string {
 	)
 }
 
-func (m *Model) drawPlatformContent() {
-	if !m.isLoaded {
-		return
-	}
+func (m *Model) drawPlatforms(width, height, activeTabIndex int) string {
+	activePlatform := m.tag.Platforms[activeTabIndex]
 
 	strs := []string{}
 
-	labels := m.drawLabels()
+	labels := m.drawLabels(activePlatform, width)
 	if labels != "" {
 		strs = append(strs, labels)
 	}
 
-	envs := m.drawEnvs()
+	envs := m.drawEnvs(activePlatform, width)
 	if envs != "" {
 		strs = append(strs, envs)
 	}
 
-	cmds := m.drawCmd()
+	cmds := m.drawCmd(activePlatform, width)
 	if cmds != "" {
 		strs = append(strs, cmds)
 	}
 
-	entrypoint := m.drawEntrypoint()
+	entrypoint := m.drawEntrypoint(activePlatform, width)
 	if entrypoint != "" {
 		strs = append(strs, entrypoint)
 	}
 
-	workingDir := m.drawWorkingDir()
+	workingDir := m.drawWorkingDir(activePlatform, width)
 	if workingDir != "" {
 		strs = append(strs, workingDir)
 	}
 
-	user := m.drawUser()
+	user := m.drawUser(activePlatform, width)
 	if user != "" {
 		strs = append(strs, user)
 	}
 
 	strs = append(strs,
-		m.drawLayers(),
-		m.drawHistory(),
+		m.drawLayers(activePlatform, width),
+		m.drawHistory(activePlatform, width),
 	)
 
-	rootFS := m.drawRootFS()
+	rootFS := m.drawRootFS(activePlatform, width)
 	if rootFS != "" {
 		strs = append(strs, rootFS)
 	}
 
-	m.platformVP.SetContent(lipgloss.JoinVertical(lipgloss.Top, strs...))
-}
-
-func (m *Model) drawGrid(fields [][2]any, minElementWidth, rowWidth int) string {
-	n := len(fields)
-	if n == 0 {
-		return ""
-	}
-
-	maxCn := max(rowWidth/minElementWidth, 1)
-
-	cn := min(n, maxCn) // column count
-
-	cw := rowWidth / cn // column width
-
-	cellStyle := lipgloss.NewStyle().
-		Width(cw).
-		Align(lipgloss.Left).
-		MarginRight(1).
-		MarginBottom(1)
-
-	var rows []string
-	var currentRow []string
-
-	for i, field := range fields {
-		renderedCell := cellStyle.Render(m.drawField(field[0], field[1], cw))
-		currentRow = append(currentRow, renderedCell)
-
-		if (i+1)%cn == 0 || i+1 == n {
-			rows = append(rows, lipgloss.JoinHorizontal(lipgloss.Top, currentRow...))
-			currentRow = []string{}
-		}
-	}
-
-	return lipgloss.JoinVertical(lipgloss.Left, rows...)
-}
-
-func (m *Model) drawField(title, content any, width int) string {
-	return lipgloss.NewStyle().
-		Border(lipgloss.ThickBorder(), false).
-		BorderLeft(true).
-		PaddingLeft(1).
-		Render(lipgloss.JoinVertical(
-			lipgloss.Top,
-			lipgloss.NewStyle().
-				Faint(true).
-				Width(width).
-				Render(fmt.Sprintf("%v", title)),
-			lipgloss.NewStyle().
-				Width(width).
-				Render(fmt.Sprintf("%v", content)),
-		))
-}
-
-func humanReadableSize(b int) string {
-	const unit = 1024
-	if b < unit {
-		return fmt.Sprintf("%dB", b)
-	}
-
-	div, exp := int64(unit), 0
-	for n := b / unit; n >= unit; n /= unit {
-		div *= unit
-		exp++
-	}
-
-	return fmt.Sprintf("%.2f%cB", float64(b)/float64(div), "KMGTPE"[exp])
+	return lipgloss.JoinVertical(
+		lipgloss.Top,
+		strs...,
+	)
 }

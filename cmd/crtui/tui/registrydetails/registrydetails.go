@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/list"
-	"github.com/charmbracelet/bubbles/spinner"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/key"
+	"charm.land/bubbles/v2/list"
+	"charm.land/bubbles/v2/spinner"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/ksckaan1/crtui/cmd/crtui/tui/figlet"
 	"github.com/ksckaan1/crtui/cmd/crtui/tui/nav"
 	"github.com/ksckaan1/crtui/cmd/crtui/tui/tagdetails"
@@ -141,7 +141,7 @@ func (m *Model) Init() tea.Cmd {
 
 	cmds := []tea.Cmd{
 		m.spinner.Tick,
-		tea.WindowSize(),
+		tea.RequestWindowSize,
 		m.fetchRepositoryList(),
 	}
 
@@ -170,7 +170,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.activePaneIndex = 1
 				m.isTagsLoading = true
 
-				return m, tea.Batch(m.fetchTagList(), tea.WindowSize())
+				return m, tea.Batch(m.fetchTagList(), tea.RequestWindowSize)
 			}
 
 			if m.activePaneIndex == 1 {
@@ -196,12 +196,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			if m.activePaneIndex == 0 && !m.isRepositoriesLoading {
 				m.isRepositoriesLoading = true
-				return m, tea.Batch(m.fetchRepositoryList(), tea.WindowSize())
+				return m, tea.Batch(m.fetchRepositoryList(), tea.RequestWindowSize)
 			}
 
 			if m.activePaneIndex == 1 && !m.isTagsLoading {
 				m.isTagsLoading = true
-				return m, tea.Batch(m.fetchTagList(), tea.WindowSize())
+				return m, tea.Batch(m.fetchTagList(), tea.RequestWindowSize)
 			}
 
 		case key.Matches(msg, m.keys.quit):
@@ -210,14 +210,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.WindowSizeMsg:
 		m.width, m.height = msg.Width, msg.Height
-		m.paneWidth = ((m.width - 4) / 2) - 1
+		m.paneWidth = (m.width / 2) - 1
 		if *m.selectedRepository == "" {
-			m.paneWidth = m.width - 4
+			m.paneWidth = m.width - 2
 		}
-		m.repositoryListUI.SetHeight(m.height - 12)
-		m.repositoryListUI.SetWidth(m.paneWidth - 1)
-		m.tagListUI.SetHeight(m.height - 12)
-		m.tagListUI.SetWidth(m.paneWidth - 1)
+		m.repositoryListUI.SetHeight(m.height - 11)
+		m.repositoryListUI.SetWidth(m.paneWidth)
+		m.tagListUI.SetHeight(m.height - 11)
+		m.tagListUI.SetWidth(m.paneWidth)
 
 	case repositoryListResult:
 		m.isRepositoriesLoading = false
@@ -267,21 +267,30 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m *Model) View() string {
+func (m *Model) View() tea.View {
+	v := tea.NewView("")
+	v.AltScreen = true
+
 	sb := &strings.Builder{}
 
-	statusBar := ""
+	statusBar := "STATUS"
 
-	out := lipgloss.NewStyle().Padding(1).Render(lipgloss.JoinVertical(
-		lipgloss.Top,
-		m.drawHeader(m.width-4, 5),
-		m.drawContent(m.height-10),
-		statusBar,
-	))
+	out := lipgloss.NewStyle().
+		Padding(1).
+		Render(
+			lipgloss.JoinVertical(
+				lipgloss.Top,
+				m.drawHeader(m.width-2, 5),
+				m.drawContent(m.height-8),
+				statusBar,
+			),
+		)
 
 	fmt.Fprint(sb, out)
 
-	return sb.String()
+	v.SetContent(sb.String())
+
+	return v
 }
 
 func (m *Model) drawHeader(width, height int) string {
@@ -341,7 +350,7 @@ func (m *Model) drawContent(height int) string {
 			BorderColor: lo.Ternary(
 				m.activePaneIndex == 0,
 				lipgloss.Color("#FFFFFF"),
-				"",
+				nil,
 			),
 		}),
 		lo.Ternary(
@@ -359,7 +368,7 @@ func (m *Model) drawContent(height int) string {
 				BorderColor: lo.Ternary(
 					m.activePaneIndex == 1,
 					lipgloss.Color("#FFFFFF"),
-					"",
+					nil,
 				),
 			}),
 			"",

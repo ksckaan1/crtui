@@ -2,16 +2,17 @@ package ui
 
 import (
 	"cmp"
+	"image/color"
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
 )
 
 type WindowConfig struct {
 	Width, Height                                int
 	LeftTitle, RightTitle                        string
 	Content                                      string
-	LeftTitleColor, RightTitleColor, BorderColor lipgloss.Color
+	LeftTitleColor, RightTitleColor, BorderColor color.Color
 }
 
 func NewWindow(cfg WindowConfig) string {
@@ -51,15 +52,15 @@ func NewWindow(cfg WindowConfig) string {
 		Foreground(borderColor).
 		Render(border.TopLeft + border.Top)
 
-	suffixWidth := max(cfg.Width-leftTitleWidth-rightTitleWidth-1, 0)
+	topRightChar := lipgloss.NewStyle().
+		Foreground(borderColor).
+		Render(border.TopRight)
+
+	suffixWidth := max(cfg.Width-leftTitleWidth-rightTitleWidth-3, 0) // 3 = prefix + top right char
 
 	middleLine := lipgloss.NewStyle().
 		Foreground(borderColor).
 		Render(strings.Repeat(border.Top, suffixWidth))
-
-	topRightChar := lipgloss.NewStyle().
-		Foreground(borderColor).
-		Render(border.TopRight)
 
 	topBar := prefix + renderedLeftTitle + middleLine + renderedRightTitle + topRightChar
 

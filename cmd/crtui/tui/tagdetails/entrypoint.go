@@ -1,12 +1,13 @@
 package tagdetails
 
 import (
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
 	"github.com/ksckaan1/crtui/cmd/crtui/tui/ui"
+	"github.com/ksckaan1/crtui/internal/core/models"
 )
 
-func (m *Model) drawEntrypoint() string {
-	entrypoint := m.tag.Platforms[m.activeTabIndex].Config.Entrypoint
+func (m *Model) drawEntrypoint(activePlatform models.Platform, width int) string {
+	entrypoint := activePlatform.Config.Entrypoint
 
 	if len(entrypoint) == 0 {
 		return ""
@@ -27,6 +28,7 @@ func (m *Model) drawEntrypoint() string {
 					Faint(true).
 					Render("● "),
 				lipgloss.NewStyle().
+					Width(width-2).
 					Render(ep),
 			),
 		)

@@ -1,12 +1,13 @@
 package tagdetails
 
 import (
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
 	"github.com/ksckaan1/crtui/cmd/crtui/tui/ui"
+	"github.com/ksckaan1/crtui/internal/core/models"
 )
 
-func (m *Model) drawCmd() string {
-	cmds := m.tag.Platforms[m.activeTabIndex].Config.Cmd
+func (m *Model) drawCmd(activePlatform models.Platform, width int) string {
+	cmds := activePlatform.Config.Cmd
 
 	if len(cmds) == 0 {
 		return ""
@@ -27,6 +28,7 @@ func (m *Model) drawCmd() string {
 					Faint(true).
 					Render("● "),
 				lipgloss.NewStyle().
+					Width(width-2).
 					Render(cmd),
 			),
 		)
