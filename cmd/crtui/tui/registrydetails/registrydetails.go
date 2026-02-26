@@ -3,6 +3,7 @@ package registrydetails
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"charm.land/bubbles/v2/key"
 	"charm.land/bubbles/v2/list"
@@ -24,61 +25,25 @@ type Registry struct {
 	SupportsHTTPS3 bool
 }
 
-type listKeyMap struct {
-	refresh    key.Binding
-	selectItem key.Binding
-	switchPane key.Binding
-	filter     key.Binding
-	esc        key.Binding
-	quit       key.Binding
-}
-
-func newListKeyMap() *listKeyMap {
-	return &listKeyMap{
-		refresh: key.NewBinding(
-			key.WithKeys("r"),
-			key.WithHelp("r", "Refresh"),
-		),
-		selectItem: key.NewBinding(
-			key.WithKeys("enter"),
-			key.WithHelp("enter", "Select item"),
-		),
-		switchPane: key.NewBinding(
-			key.WithKeys("tab"),
-			key.WithHelp("tab", "Switch pane"),
-		),
-		filter: key.NewBinding(
-			key.WithKeys("/"),
-			key.WithHelp("/", "Filter"),
-		),
-		esc: key.NewBinding(
-			key.WithKeys("esc"),
-			key.WithHelp("esc", "Back"),
-		),
-		quit: key.NewBinding(
-			key.WithKeys("ctrl+c"),
-			key.WithHelp("ctrl+c", "Quit"),
-		),
-	}
-}
-
 var _ tea.Model = (*Model)(nil)
 
 type Model struct {
 	// ui
-	spinner          spinner.Model
-	keys             *listKeyMap
-	backModel        tea.Model
-	repositoryListUI list.Model
-	tagListUI        list.Model
+	keysWindow         *ui.KeysWindow
+	spinner            spinner.Model
+	backModel          tea.Model
+	repositoriesWindow *ui.Window
+	repositoryListUI   list.Model
+	tagsWindow         *ui.Window
+	tagListUI          list.Model
 
 	// Data
-	registry *Registry
-	rc       *registryclient.RegistryClient
+	registry  *Registry
+	rc        *registryclient.RegistryClient
+	startTime time.Time
 
 	// Sizing
 	width, height int
-	paneWidth     int
 
 	// States
 	activePaneIndex int
@@ -90,19 +55,29 @@ type Model struct {
 	isTagsLoading bool
 	tagList       []*Tag
 	selectedTag   string
+
+	minTerminalSizeWarning *ui.MinTerminalSizeWarning
+	status                 *ui.Status
 }
 
-func NewRegistryDetails(registry *Registry, backModel tea.Model) *Model {
+func NewRegistryDetails(
+	registry *Registry,
+	backModel tea.Model,
+	status *ui.Status,
+) *Model {
 	rc := registryclient.New(
 		registry.URL,
 		registry.Username,
 		registry.Password,
 	)
-
 	rc.SetTransport(registry.SupportsHTTPS3)
 
 	sp := spinner.New()
 	sp.Spinner = ui.LoadingSpinner
+
+	kw := ui.NewKeysWindow()
+	kw.SetHeight(5)
+	kw.SetKeyMap(keyMap)
 
 	repositoryList := list.New(nil, list.NewDefaultDelegate(), 0, 0)
 	repositoryList.SetShowTitle(false)
@@ -117,18 +92,22 @@ func NewRegistryDetails(registry *Registry, backModel tea.Model) *Model {
 	tagList.SetShowStatusBar(false)
 
 	return &Model{
-		registry:         registry,
-		rc:               rc,
-		backModel:        backModel,
-		keys:             newListKeyMap(),
-		spinner:          sp,
-		repositoryListUI: repositoryList,
-		tagListUI:        tagList,
+		registry:           registry,
+		rc:                 rc,
+		keysWindow:         kw,
+		backModel:          backModel,
+		spinner:            sp,
+		repositoriesWindow: ui.NewWindow(),
+		repositoryListUI:   repositoryList,
+		tagsWindow:         ui.NewWindow(),
+		tagListUI:          tagList,
 
 		isRepositoriesLoading: true,
 		isTagsLoading:         false,
 
-		selectedRepository: new(""),
+		selectedRepository:     new(""),
+		minTerminalSizeWarning: ui.NewMinTerminalSizeWarning(82, 24),
+		status:                 status,
 	}
 }
 
@@ -145,6 +124,13 @@ func (m *Model) Init() tea.Cmd {
 		m.fetchRepositoryList(),
 	}
 
+	if *m.selectedRepository != "" {
+		cmds = append(cmds, m.fetchTagList())
+	}
+
+	m.startTime = time.Now()
+	m.status.SetStatus(ui.Info, "Loading repository list...")
+
 	return tea.Batch(cmds...)
 }
 
@@ -152,16 +138,17 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
-		case key.Matches(msg, m.keys.esc) &&
+		case key.Matches(msg, keyMap.Esc) &&
 			m.repositoryListUI.FilterState() != list.Filtering &&
 			m.tagListUI.FilterState() != list.Filtering:
 			if m.activePaneIndex == 0 {
+				m.status.SetStatus(ui.Empty, "")
 				return nav.Navigate(m.backModel)
 			} else {
 				m.activePaneIndex = 0
 			}
 
-		case key.Matches(msg, m.keys.selectItem) &&
+		case key.Matches(msg, keyMap.SelectItem) &&
 			m.repositoryListUI.FilterState() != list.Filtering &&
 			m.tagListUI.FilterState() != list.Filtering &&
 			len(m.repositoryList) > 1:
@@ -169,58 +156,71 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				*m.selectedRepository = m.repositoryList[m.repositoryListUI.Index()].Name
 				m.activePaneIndex = 1
 				m.isTagsLoading = true
+				m.status.SetStatus(ui.Info, "Loading tag list...")
+				m.startTime = time.Now()
 
 				return m, tea.Batch(m.fetchTagList(), tea.RequestWindowSize)
 			}
 
 			if m.activePaneIndex == 1 {
 				m.selectedTag = m.tagList[m.tagListUI.Index()].Name
+				m.status.SetStatus(ui.Empty, "")
+
 				return nav.Navigate(
 					tagdetails.NewModel(
 						m.rc,
 						*m.selectedRepository,
 						m.selectedTag,
 						m,
+						m.status,
 					),
 				)
 			}
 
-		case key.Matches(msg, m.keys.switchPane) &&
+		case key.Matches(msg, keyMap.SwitchPane) &&
 			*m.selectedRepository != "" &&
 			m.repositoryListUI.FilterState() != list.Filtering:
 			m.activePaneIndex = 1 - (m.activePaneIndex / 1)
 
-		case key.Matches(msg, m.keys.refresh) &&
+		case key.Matches(msg, keyMap.Refresh) &&
 			m.repositoryListUI.FilterState() != list.Filtering &&
 			m.tagListUI.FilterState() != list.Filtering:
 
 			if m.activePaneIndex == 0 && !m.isRepositoriesLoading {
 				m.isRepositoriesLoading = true
+				m.status.SetStatus(ui.Info, "Loading repository list...")
+				m.startTime = time.Now()
 				return m, tea.Batch(m.fetchRepositoryList(), tea.RequestWindowSize)
 			}
 
 			if m.activePaneIndex == 1 && !m.isTagsLoading {
 				m.isTagsLoading = true
+				m.status.SetStatus(ui.Info, "Loading tag list...")
+				m.startTime = time.Now()
 				return m, tea.Batch(m.fetchTagList(), tea.RequestWindowSize)
 			}
 
-		case key.Matches(msg, m.keys.quit):
+		case key.Matches(msg, keyMap.Quit):
 			return m, tea.Quit
 		}
 
 	case tea.WindowSizeMsg:
 		m.width, m.height = msg.Width, msg.Height
-		m.paneWidth = (m.width / 2) - 1
+		m.keysWindow.SetWidth(m.width - 29)
+		m.repositoriesWindow.SetHeight(m.height - 8 - m.status.Height())
 		if *m.selectedRepository == "" {
-			m.paneWidth = m.width - 2
+			m.repositoriesWindow.SetWidth(m.width - 2)
+		} else {
+			m.repositoriesWindow.SetWidth(m.width/2 - 1)
 		}
-		m.repositoryListUI.SetHeight(m.height - 11)
-		m.repositoryListUI.SetWidth(m.paneWidth)
-		m.tagListUI.SetHeight(m.height - 11)
-		m.tagListUI.SetWidth(m.paneWidth)
+		m.tagsWindow.SetHeight(m.height - 8 - m.status.Height())
+		m.tagsWindow.SetWidth(m.width - lipgloss.Width(m.repositoriesWindow.View()) - 2)
 
 	case repositoryListResult:
 		m.isRepositoriesLoading = false
+		m.repositoryListUI.ResetFilter()
+		m.repositoryListUI.ResetSelected()
+
 		m.repositoryList = lo.Map(msg.repositoryList, func(item string, _ int) *Repository {
 			return &Repository{
 				Name: item,
@@ -232,8 +232,24 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}))
 
+		if msg.err != nil {
+			m.status.SetStatus(
+				ui.Error,
+				fmt.Sprintf("Failed to load repository list: %s", msg.err),
+				time.Since(m.startTime),
+			)
+		} else {
+			m.status.SetStatus(
+				ui.OK,
+				"Repository list loaded",
+				time.Since(m.startTime),
+			)
+		}
+
 	case tagListResult:
 		m.isTagsLoading = false
+		m.tagListUI.ResetFilter()
+		m.tagListUI.ResetSelected()
 		m.tagList = lo.Map(msg.tagList, func(item string, _ int) *Tag {
 			return &Tag{
 				Name: item,
@@ -244,6 +260,20 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				Name: item.Name,
 			}
 		}))
+
+		if msg.err != nil {
+			m.status.SetStatus(
+				ui.Error,
+				fmt.Sprintf("Failed to load tag list: %s", msg.err),
+				time.Since(m.startTime),
+			)
+		} else {
+			m.status.SetStatus(
+				ui.OK,
+				"Tag list loaded",
+				time.Since(m.startTime),
+			)
+		}
 	}
 
 	cmds := []tea.Cmd{}
@@ -271,18 +301,22 @@ func (m *Model) View() tea.View {
 	v := tea.NewView("")
 	v.AltScreen = true
 
-	sb := &strings.Builder{}
+	wrn := m.minTerminalSizeWarning.View()
+	if wrn != "" {
+		v.SetContent(wrn)
+		return v
+	}
 
-	statusBar := "STATUS"
+	sb := &strings.Builder{}
 
 	out := lipgloss.NewStyle().
 		Padding(1).
 		Render(
 			lipgloss.JoinVertical(
 				lipgloss.Top,
-				m.drawHeader(m.width-2, 5),
-				m.drawContent(m.height-8),
-				statusBar,
+				m.drawHeader(),
+				m.drawContent(),
+				m.status.View(),
 			),
 		)
 
@@ -293,111 +327,96 @@ func (m *Model) View() tea.View {
 	return v
 }
 
-func (m *Model) drawHeader(width, height int) string {
+func (m *Model) drawHeader() string {
 	out := lipgloss.JoinHorizontal(
 		lipgloss.Top,
 		figlet.Figlet,
 		" ",
-		ui.NewKeysWindow(ui.KeysWindowConfig{
-			Width:  width - 27,
-			Height: height,
-			Keys: []key.Binding{
-				key.NewBinding(key.WithHelp("↑ ↓", "Navigate")),
-				m.keys.selectItem,
-				m.keys.refresh,
-				m.keys.filter,
-				m.keys.switchPane,
-				m.keys.esc,
-				m.keys.quit,
-			},
-		}),
+		m.keysWindow.View(),
 	)
 
 	return out
 }
 
-func (m *Model) drawContent(height int) string {
-	repositoriesTitle := "Repository"
+func (m *Model) drawContent() string {
+	content := []string{}
+
+	content = append(content, m.drawRepositories())
+
+	if *m.selectedRepository != "" {
+		content = append(content,
+			m.drawTags(),
+		)
+	}
+
+	return lipgloss.JoinHorizontal(
+		lipgloss.Top,
+		content...,
+	)
+}
+
+func (m *Model) drawRepositories() string {
+	m.repositoriesWindow.SetBorderColor(nil)
+	if m.activePaneIndex == 0 {
+		m.repositoriesWindow.SetBorderColor(lipgloss.Color("#FFFFFF"))
+	}
+
+	repoLeftTitle := "Repositories"
 	if m.repositoryListUI.IsFiltered() {
-		repositoriesTitle += lipgloss.NewStyle().
+		repoLeftTitle += lipgloss.NewStyle().
 			Foreground(ui.PrimaryColor).
 			Render(" /" + m.repositoryListUI.FilterValue())
 	}
+	m.repositoriesWindow.SetLeftTitle(repoLeftTitle)
 
-	tagsTitle := "Tags"
+	m.repositoriesWindow.SetRightTitle(lo.Ternary(
+		m.isRepositoriesLoading,
+		m.spinner.View(),
+		ui.CountKind(
+			len(m.repositoryList),
+			"repository",
+			"repositories",
+		),
+	))
+
+	m.repositoriesWindow.SetContent(func(width, height int) string {
+		m.repositoryListUI.SetWidth(width)
+		m.repositoryListUI.SetHeight(height)
+		return m.repositoryListUI.View()
+	})
+
+	return m.repositoriesWindow.View()
+}
+
+func (m *Model) drawTags() string {
+	m.tagsWindow.SetBorderColor(nil)
+	if m.activePaneIndex == 1 {
+		m.tagsWindow.SetBorderColor(lipgloss.Color("#FFFFFF"))
+	}
+
+	tagLeftTitle := "Tags"
 	if m.tagListUI.IsFiltered() {
-		tagsTitle += lipgloss.NewStyle().
+		tagLeftTitle += lipgloss.NewStyle().
 			Foreground(ui.PrimaryColor).
 			Render(" /" + m.tagListUI.FilterValue())
 	}
+	m.tagsWindow.SetLeftTitle(tagLeftTitle)
 
-	out := lipgloss.JoinHorizontal(
-		lipgloss.Top,
-		ui.NewWindow(ui.WindowConfig{
-			Width:     m.paneWidth,
-			Height:    height,
-			LeftTitle: repositoriesTitle,
-			RightTitle: lo.Ternary(
-				m.isRepositoriesLoading,
-				m.spinner.View(),
-				ui.CountKind(
-					len(m.repositoryList),
-					"repository",
-					"repositories",
-				),
-			),
-			Content: m.drawRepositoryList(),
-			BorderColor: lo.Ternary(
-				m.activePaneIndex == 0,
-				lipgloss.Color("#FFFFFF"),
-				nil,
-			),
-		}),
-		lo.Ternary(
-			*m.selectedRepository != "",
-			ui.NewWindow(ui.WindowConfig{
-				Width:     m.paneWidth,
-				Height:    height,
-				LeftTitle: tagsTitle,
-				RightTitle: lo.Ternary(
-					m.isTagsLoading,
-					m.spinner.View(),
-					ui.CountKind(len(m.tagList), "tag", "tags"),
-				),
-				Content: m.drawTagList(),
-				BorderColor: lo.Ternary(
-					m.activePaneIndex == 1,
-					lipgloss.Color("#FFFFFF"),
-					nil,
-				),
-			}),
-			"",
+	m.tagsWindow.SetRightTitle(lo.Ternary(
+		m.isTagsLoading,
+		m.spinner.View(),
+		ui.CountKind(
+			len(m.tagList),
+			"tag",
+			"tags",
 		),
-	)
+	))
 
-	return out
-}
+	m.tagsWindow.SetContent(func(width, height int) string {
+		m.tagListUI.SetWidth(width)
+		m.tagListUI.SetHeight(height)
+		return m.tagListUI.View()
+	})
 
-func (m *Model) drawRepositoryList() string {
-	if !m.isRepositoriesLoading && len(m.repositoryList) == 0 {
-		return "No repository found!"
-	}
-
-	if m.isRepositoriesLoading && len(m.repositoryList) == 0 {
-		return ""
-	}
-
-	return m.repositoryListUI.View()
-}
-
-func (m *Model) drawTagList() string {
-	if !m.isTagsLoading && len(m.tagList) == 0 {
-		return "No tag found!"
-	}
-
-	if m.isTagsLoading && len(m.tagList) == 0 {
-		return ""
-	}
-
-	return m.tagListUI.View()
+	return m.tagsWindow.View()
 }

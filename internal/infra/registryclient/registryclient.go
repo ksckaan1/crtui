@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ksckaan1/crtui/internal/core/customerrors"
 	"github.com/ksckaan1/crtui/internal/core/enums/registrystatus"
 	"github.com/ksckaan1/crtui/internal/core/models"
 	"github.com/quic-go/quic-go"
@@ -131,7 +132,7 @@ func (r *RegistryClient) ListRepositories(ctx context.Context) ([]string, error)
 	defer resp.Body.Close()
 
 	if resp.StatusCode() != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode())
+		return nil, fmt.Errorf("unexpected status code: %w", customerrors.ErrStatusCode{StatusCode: resp.StatusCode()})
 	}
 
 	return result.Repositories, nil
@@ -154,7 +155,7 @@ func (r *RegistryClient) ListTags(ctx context.Context, repository string) (*mode
 	defer resp.Body.Close()
 
 	if resp.StatusCode() != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode())
+		return nil, fmt.Errorf("unexpected status code: %w", customerrors.ErrStatusCode{StatusCode: resp.StatusCode()})
 	}
 
 	sortTags(result.Tags)
@@ -177,7 +178,7 @@ func (r *RegistryClient) GetTag(ctx context.Context, repositoryName, tagName str
 	defer resp.Body.Close()
 
 	if resp.StatusCode() != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode())
+		return nil, fmt.Errorf("unexpected status code: %w", customerrors.ErrStatusCode{StatusCode: resp.StatusCode()})
 	}
 
 	switch resp.Header().Get("Content-Type") {
@@ -290,7 +291,7 @@ func (r *RegistryClient) getConfigBlob(ctx context.Context, repositoryName, dige
 	defer resp.Body.Close()
 
 	if resp.StatusCode() != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode())
+		return nil, fmt.Errorf("unexpected status code: %w", customerrors.ErrStatusCode{StatusCode: resp.StatusCode()})
 	}
 
 	var result blob
@@ -316,7 +317,7 @@ func (r *RegistryClient) getManifestByDigest(ctx context.Context, repositoryName
 	defer resp.Body.Close()
 
 	if resp.StatusCode() != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode())
+		return nil, fmt.Errorf("unexpected status code: %w", customerrors.ErrStatusCode{StatusCode: resp.StatusCode()})
 	}
 
 	var parsedBody imageManifestV1
@@ -384,7 +385,7 @@ func (r *RegistryClient) DeleteTag(ctx context.Context, repositoryName, tagName 
 	defer headResp.Body.Close()
 
 	if headResp.StatusCode() != http.StatusOK {
-		return fmt.Errorf("unexpected status code: %d", headResp.StatusCode())
+		return fmt.Errorf("unexpected status code: %w", customerrors.ErrStatusCode{StatusCode: headResp.StatusCode()})
 	}
 
 	dockerContentDigest := headResp.Header().Get("Docker-Content-Digest")
@@ -399,7 +400,7 @@ func (r *RegistryClient) DeleteTag(ctx context.Context, repositoryName, tagName 
 	defer deleteResp.Body.Close()
 
 	if deleteResp.StatusCode() != http.StatusAccepted {
-		return fmt.Errorf("unexpected status code: %d", deleteResp.StatusCode())
+		return fmt.Errorf("unexpected status code: %w", customerrors.ErrStatusCode{StatusCode: deleteResp.StatusCode()})
 	}
 
 	return nil

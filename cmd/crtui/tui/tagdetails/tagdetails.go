@@ -3,6 +3,7 @@ package tagdetails
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"charm.land/bubbles/v2/key"
 	"charm.land/bubbles/v2/spinner"
@@ -16,68 +17,67 @@ import (
 	"github.com/samber/lo"
 )
 
-type listKeyMap struct {
-	refresh key.Binding
-	esc     key.Binding
-	quit    key.Binding
-}
-
-func newListKeyMap() *listKeyMap {
-	return &listKeyMap{
-		refresh: key.NewBinding(
-			key.WithKeys("r"),
-			key.WithHelp("r", "Refresh"),
-		),
-		esc: key.NewBinding(
-			key.WithKeys("esc"),
-			key.WithHelp("esc", "Back"),
-		),
-		quit: key.NewBinding(
-			key.WithKeys("ctrl+c"),
-			key.WithHelp("ctrl+c", "Quit"),
-		),
-	}
-}
-
 var _ tea.Model = (*Model)(nil)
 
 type Model struct {
 	rc              *registryclient.RegistryClient
-	keys            *listKeyMap
 	spinner         spinner.Model
 	backModel       tea.Model
+	keysWindow      *ui.KeysWindow
+	heroWindow      *ui.Window
 	platformsWindow *ui.TabbedWindow
+	status          *ui.Status
 
 	width, height int
 
-	host           string
+	pullCommand    string
 	repositoryName string
 	tagName        string
 	tag            *models.Tag
 	err            error
 
 	isLoaded bool
+
+	timeStart time.Time
+
+	minTerminalSizeWarning *ui.MinTerminalSizeWarning
 }
 
-func NewModel(rc *registryclient.RegistryClient, repositoryName, tagName string, backModel tea.Model) *Model {
+func NewModel(
+	rc *registryclient.RegistryClient,
+	repositoryName,
+	tagName string,
+	backModel tea.Model,
+	status *ui.Status,
+) *Model {
 	sp := spinner.New()
 	sp.Spinner = ui.LoadingSpinner
 
+	hw := ui.NewWindow()
 	pw := ui.NewTabbedWindow()
 
 	host := strings.TrimPrefix(rc.BaseURL, "https://")
 	host = strings.TrimPrefix(host, "http://")
 
-	return &Model{
-		rc:        rc,
-		keys:      newListKeyMap(),
-		spinner:   sp,
-		backModel: backModel,
+	kw := ui.NewKeysWindow()
+	kw.SetHeight(5)
+	kw.SetKeyMap(keyMap)
 
-		platformsWindow: pw,
-		host:            host,
-		repositoryName:  repositoryName,
-		tagName:         tagName,
+	return &Model{
+		rc:         rc,
+		spinner:    sp,
+		backModel:  backModel,
+		keysWindow: kw,
+		status:     status,
+
+		heroWindow:             hw,
+		platformsWindow:        pw,
+		pullCommand:            fmt.Sprintf("docker pull %s/%s:%s", host, repositoryName, tagName),
+		repositoryName:         repositoryName,
+		tagName:                tagName,
+		minTerminalSizeWarning: ui.NewMinTerminalSizeWarning(82, 24),
+
+		timeStart: time.Now(),
 	}
 }
 
@@ -88,6 +88,8 @@ func (m *Model) Init() tea.Cmd {
 		m.fetchTag(),
 	}
 
+	m.status.SetStatus(ui.Info, "Loading tag details...")
+
 	return tea.Batch(cmds...)
 }
 
@@ -95,30 +97,63 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
-		case key.Matches(msg, m.keys.esc):
+		case key.Matches(msg, keyMap.DeleteTag):
+			m.isLoaded = false
+			m.status.SetStatus(ui.Info, "Deleting tag...")
+			return m, m.deleteTag()
+
+		case key.Matches(msg, keyMap.Esc):
+			m.status.SetStatus(ui.Empty, "")
 			return nav.Navigate(m.backModel)
 
-		case key.Matches(msg, m.keys.refresh):
+		case key.Matches(msg, keyMap.Refresh):
 			m.isLoaded = false
+			m.status.SetStatus(ui.Info, "Refreshing tag details...")
+			m.timeStart = time.Now()
 			return m, m.fetchTag()
 
-		case key.Matches(msg, m.keys.quit):
+		case key.Matches(msg, keyMap.CopyPullCommand):
+			m.status.SetStatus(
+				ui.Info,
+				fmt.Sprintf("Pull command copied (%s)", m.pullCommand),
+			)
+			return m, tea.SetClipboard(m.pullCommand)
+
+		case key.Matches(msg, keyMap.Quit):
 			return m, tea.Quit
 		}
 
 	case tea.WindowSizeMsg:
 		m.width, m.height = msg.Width, msg.Height
+		m.keysWindow.SetWidth(m.width - 29)
+		m.heroWindow.SetWidth(m.width - 2)
 		m.platformsWindow.SetWidth(m.width - 2)
-		m.platformsWindow.SetHeight(m.height - 14)
+		m.platformsWindow.SetHeight(m.height - 13 - lipgloss.Height(m.status.View()))
 
 	case tagMsg:
 		m.tag = msg.tag
 		m.err = msg.err
 		m.isLoaded = true
+
+		took := time.Since(m.timeStart)
+
 		if m.tag != nil {
 			m.platformsWindow.SetTabs(lo.Map(m.tag.Platforms, func(item models.Platform, _ int) string {
 				return fmt.Sprintf("%s/%s", item.Config.OS, item.Config.Architecture)
 			}))
+			m.status.SetStatus(ui.OK, "Tag details loaded", took)
+		}
+
+		if m.err != nil {
+			m.status.SetStatus(ui.Error, fmt.Sprintf("Failed to load tag details: %s", msg.err.Error()), took)
+		}
+
+	case deleteTagMsg:
+		m.isLoaded = true
+		m.err = msg.err
+
+		if m.err == nil {
+			return nav.Navigate(m.backModel)
 		}
 	}
 
@@ -139,30 +174,36 @@ func (m *Model) View() tea.View {
 	v := tea.NewView("")
 	v.AltScreen = true
 
-	sb := &strings.Builder{}
-
-	statusBar := "STATUS"
-
-	rightTitle := ""
-
-	if !m.isLoaded {
-		rightTitle = m.spinner.View()
-	}
-
-	if m.tag == nil {
-		v.SetContent(lipgloss.NewStyle().Padding(1).Render(lipgloss.JoinVertical(
-			lipgloss.Top,
-			m.drawHeader(m.width-2, 5),
-			ui.NewWindow(ui.WindowConfig{
-				Width:      m.width - 2,
-				Height:     m.height - 8,
-				RightTitle: rightTitle,
-				Content:    m.drawTop(),
-			}),
-			statusBar,
-		)))
+	wrn := m.minTerminalSizeWarning.View()
+	if wrn != "" {
+		v.SetContent(wrn)
 		return v
 	}
+
+	sb := &strings.Builder{}
+
+	m.heroWindow.SetRightTitle(lo.Ternary(!m.isLoaded, m.spinner.View(), ""))
+
+	if m.tag == nil {
+		m.heroWindow.SetHeight(m.height - 8 - m.status.Height())
+
+		v.SetContent(lipgloss.NewStyle().
+			Padding(1).
+			Render(
+				lipgloss.JoinVertical(
+					lipgloss.Top,
+					m.drawHeader(),
+					m.heroWindow.View(),
+					m.status.View(),
+				),
+			),
+		)
+
+		return v
+	}
+
+	m.heroWindow.SetHeight(3)
+	m.heroWindow.SetContent(m.drawTop)
 
 	m.platformsWindow.SetContent(m.drawPlatforms)
 
@@ -170,15 +211,10 @@ func (m *Model) View() tea.View {
 		Padding(1).
 		Render(lipgloss.JoinVertical(
 			lipgloss.Top,
-			m.drawHeader(m.width-2, 5),
-			ui.NewWindow(ui.WindowConfig{
-				Width:      m.width - 2,
-				Height:     3,
-				RightTitle: rightTitle,
-				Content:    m.drawTop(),
-			}),
+			m.drawHeader(),
+			m.heroWindow.View(),
 			m.platformsWindow.View(),
-			statusBar,
+			m.status.View(),
 		))
 
 	fmt.Fprint(sb, out)
@@ -188,32 +224,18 @@ func (m *Model) View() tea.View {
 	return v
 }
 
-func (m *Model) drawHeader(width, height int) string {
+func (m *Model) drawHeader() string {
 	out := lipgloss.JoinHorizontal(
 		lipgloss.Top,
 		figlet.Figlet,
 		" ",
-		ui.NewKeysWindow(ui.KeysWindowConfig{
-			Width:  width - 27,
-			Height: height,
-			Keys: []key.Binding{
-				key.NewBinding(key.WithHelp("↑ ↓", "Scroll")),
-				key.NewBinding(key.WithHelp("← →", "Switch Tabs")),
-				m.keys.refresh,
-				m.keys.esc,
-				m.keys.quit,
-			},
-		}),
+		m.keysWindow.View(),
 	)
 
 	return out
 }
 
-func (m *Model) drawTop() string {
-	if m.tag == nil {
-		return ""
-	}
-
+func (m *Model) drawTop(width, _ int) string {
 	totalSizeBytes := lo.SumBy(m.tag.Platforms, func(item models.Platform) int {
 		return lo.SumBy(item.Layers, func(layer models.Layer) int {
 			return layer.Size
@@ -222,7 +244,7 @@ func (m *Model) drawTop() string {
 
 	return lipgloss.JoinHorizontal(lipgloss.Top,
 		lipgloss.NewStyle().
-			Width(m.width/2).
+			Width(width/2).
 			Render(
 				lipgloss.JoinVertical(
 					lipgloss.Top,
@@ -239,7 +261,7 @@ func (m *Model) drawTop() string {
 				),
 			),
 		lipgloss.NewStyle().
-			Width(m.width/2).
+			Width(width/2).
 			Render(
 				lipgloss.JoinVertical(
 					lipgloss.Top,

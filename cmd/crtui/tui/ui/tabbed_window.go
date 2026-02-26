@@ -11,15 +11,6 @@ import (
 	"github.com/samber/lo"
 )
 
-type TabbedWindowConfig struct {
-	Width, Height  int
-	ActiveTabIndex int
-	Tabs           []string
-	Content        string
-	BorderColor    color.Color
-	ActiveTabColor color.Color
-}
-
 type TabbedWindow struct {
 	width, height       int
 	activeTabIndex      int

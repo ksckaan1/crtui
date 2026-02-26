@@ -3,26 +3,11 @@ package ui
 import (
 	"fmt"
 	"math"
+	"reflect"
 
 	"charm.land/bubbles/v2/key"
 	"charm.land/lipgloss/v2"
 )
-
-type KeysWindowConfig struct {
-	Width, Height int
-	Keys          []key.Binding
-}
-
-func NewKeysWindow(cfg KeysWindowConfig) string {
-	w := NewWindow(WindowConfig{
-		Width:     cfg.Width,
-		Height:    cfg.Height,
-		LeftTitle: "Keys",
-		Content:   drawKeysContent(cfg.Keys, cfg.Height),
-	})
-
-	return w
-}
 
 var (
 	keysContainer = lipgloss.NewStyle().
@@ -34,26 +19,93 @@ var (
 				Foreground(lipgloss.Color("#626262"))
 )
 
-func drawKeysContent(keys []key.Binding, height int) string {
-	cols := make([]string, 0, int(math.Ceil(float64(len(keys))/float64(height))))
+type KeysWindow struct {
+	keys    []key.Binding
+	window  *Window
+	content string
+}
 
-	var col string
-	for i, k := range keys {
-		col += fmt.Sprintf("%s %s", keysKeyStyle.Render(k.Help().Key), keysDescriptionStyle.Render(k.Help().Desc))
-		if i%height != 3 {
-			col += "\n"
+func NewKeysWindow() *KeysWindow {
+	w := NewWindow()
+	w.SetLeftTitle("Keys")
+
+	return &KeysWindow{
+		window: w,
+	}
+}
+
+func (m *KeysWindow) SetWidth(width int) {
+	if width == m.window.Width() {
+		return
+	}
+	m.window.SetWidth(width)
+	m.genContent()
+}
+
+func (m *KeysWindow) Width() int {
+	return m.window.Width()
+}
+
+func (m *KeysWindow) SetHeight(height int) {
+	if height == m.window.Height() {
+		return
+	}
+	m.window.SetHeight(height)
+	m.genContent()
+}
+
+func (m *KeysWindow) Height() int {
+	return m.window.Height()
+}
+
+func (m *KeysWindow) SetKeyMap(keyMap any) {
+	keys := []key.Binding{}
+
+	v := reflect.ValueOf(keyMap)
+	if v.Kind() != reflect.Struct {
+		panic("key map must be struct")
+	}
+
+	for i := range v.Type().NumField() {
+		fieldVal, ok := v.Field(i).Interface().(key.Binding)
+		if !ok {
 			continue
 		}
-
-		cols = append(cols, col, "  ")
-		col = ""
+		keys = append(keys, fieldVal)
 	}
 
-	if col != "" {
-		cols = append(cols, col)
-	}
+	m.keys = keys
+	m.genContent()
+}
 
-	keysContent := lipgloss.JoinHorizontal(lipgloss.Top, cols...)
+func (m *KeysWindow) genContent() {
+	m.window.SetContent(func(_, height int) string {
+		cols := make([]string, 0, int(math.Ceil(float64(len(m.keys))/float64(height))))
 
-	return keysContainer.Render(keysContent)
+		var col string
+		for i, k := range m.keys {
+			col += fmt.Sprintf("%s %s", keysKeyStyle.Render(k.Help().Key), keysDescriptionStyle.Render(k.Help().Desc))
+			if i%height != 3 {
+				col += "\n"
+				continue
+			}
+
+			cols = append(cols, col, "  ")
+			col = ""
+		}
+
+		if col != "" {
+			cols = append(cols, col)
+		}
+
+		keysContent := lipgloss.JoinHorizontal(lipgloss.Top, cols...)
+
+		return keysContainer.Render(keysContent)
+	})
+
+	m.content = m.window.View()
+}
+
+func (m *KeysWindow) View() string {
+	return m.content
 }

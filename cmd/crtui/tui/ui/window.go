@@ -5,20 +5,76 @@ import (
 	"image/color"
 	"strings"
 
+	"charm.land/bubbles/v2/viewport"
 	"charm.land/lipgloss/v2"
 )
 
-type WindowConfig struct {
-	Width, Height                                int
-	LeftTitle, RightTitle                        string
-	Content                                      string
-	LeftTitleColor, RightTitleColor, BorderColor color.Color
+type Window struct {
+	width, height   int
+	leftTitle       string
+	leftTitleColor  color.Color
+	rightTitle      string
+	rightTitleColor color.Color
+	borderColor     color.Color
+	content         string
 }
 
-func NewWindow(cfg WindowConfig) string {
-	leftTitleColor := cmp.Or(cfg.LeftTitleColor, lipgloss.Color("#959595"))
-	rightTitleColor := cmp.Or(cfg.RightTitleColor, lipgloss.Color("#959595"))
-	borderColor := cmp.Or(cfg.BorderColor, SecondaryColor)
+func NewWindow() *Window {
+	return &Window{}
+}
+
+func (m *Window) SetWidth(width int) {
+	m.width = width
+}
+
+func (m *Window) Width() int {
+	return m.width
+}
+
+func (m *Window) SetHeight(height int) {
+	m.height = height
+}
+
+func (m *Window) Height() int {
+	return m.height
+}
+
+func (m *Window) SetLeftTitle(s string) {
+	m.leftTitle = s
+}
+
+func (m *Window) LeftTitle() string {
+	return m.leftTitle
+}
+
+func (m *Window) SetRightTitle(s string) {
+	m.rightTitle = s
+}
+
+func (m *Window) RightTitle() string {
+	return m.rightTitle
+}
+
+func (m *Window) SetLeftTitleColor(c color.Color) {
+	m.leftTitleColor = c
+}
+
+func (m *Window) SetRightTitleColor(c color.Color) {
+	m.rightTitleColor = c
+}
+
+func (m *Window) SetBorderColor(c color.Color) {
+	m.borderColor = c
+}
+
+func (m *Window) SetContent(cb func(width, height int) string) {
+	m.content = cb(m.width-1, m.height-1)
+}
+
+func (m *Window) View() string {
+	leftTitleColor := cmp.Or(m.leftTitleColor, lipgloss.Color("#959595"))
+	rightTitleColor := cmp.Or(m.rightTitleColor, lipgloss.Color("#959595"))
+	borderColor := cmp.Or(m.borderColor, SecondaryColor)
 
 	border := lipgloss.RoundedBorder()
 
@@ -26,12 +82,12 @@ func NewWindow(cfg WindowConfig) string {
 	var renderedLeftTitle string
 	leftTitleWidth := 0
 
-	if cfg.LeftTitle != "" {
+	if m.leftTitle != "" {
 		leftTitleStyle := lipgloss.NewStyle().
 			Foreground(leftTitleColor).
 			Bold(true).
 			Padding(0, 1)
-		renderedLeftTitle = leftTitleStyle.Render(cfg.LeftTitle)
+		renderedLeftTitle = leftTitleStyle.Render(m.leftTitle)
 		leftTitleWidth = lipgloss.Width(renderedLeftTitle)
 	}
 
@@ -39,11 +95,11 @@ func NewWindow(cfg WindowConfig) string {
 	var renderedRightTitle string
 	rightTitleWidth := 0
 
-	if cfg.RightTitle != "" {
+	if m.rightTitle != "" {
 		rightTitleStyle := lipgloss.NewStyle().
 			Foreground(rightTitleColor).
 			Padding(0, 1)
-		renderedRightTitle = rightTitleStyle.Render(cfg.RightTitle)
+		renderedRightTitle = rightTitleStyle.Render(m.rightTitle)
 		rightTitleWidth = lipgloss.Width(renderedRightTitle)
 	}
 
@@ -56,7 +112,7 @@ func NewWindow(cfg WindowConfig) string {
 		Foreground(borderColor).
 		Render(border.TopRight)
 
-	suffixWidth := max(cfg.Width-leftTitleWidth-rightTitleWidth-3, 0) // 3 = prefix + top right char
+	suffixWidth := max(m.width-leftTitleWidth-rightTitleWidth-3, 0) // 3 = prefix + top right char
 
 	middleLine := lipgloss.NewStyle().
 		Foreground(borderColor).
@@ -68,12 +124,19 @@ func NewWindow(cfg WindowConfig) string {
 	bodyStyle := lipgloss.NewStyle().
 		Border(border, false, true, true, true).
 		BorderForeground(borderColor).
-		Width(cfg.Width).
-		Height(cfg.Height - 1)
+		Width(m.width).
+		Height(m.height - 1)
+
+	vp := viewport.New(
+		viewport.WithWidth(m.width-1),
+		viewport.WithHeight(m.height-1),
+	)
+
+	vp.SetContent(m.content)
 
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
 		topBar,
-		bodyStyle.Render(cfg.Content),
+		bodyStyle.Render(vp.View()),
 	)
 }

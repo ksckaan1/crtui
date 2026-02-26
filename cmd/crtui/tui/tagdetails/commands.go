@@ -18,3 +18,14 @@ func (m *Model) fetchTag() tea.Cmd {
 		return tagMsg{tag: tag, err: err}
 	}
 }
+
+type deleteTagMsg struct {
+	err error
+}
+
+func (m *Model) deleteTag() tea.Cmd {
+	return func() tea.Msg {
+		err := m.rc.DeleteTag(context.Background(), m.repositoryName, m.tagName)
+		return deleteTagMsg{err: err}
+	}
+}
