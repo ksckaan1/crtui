@@ -19,6 +19,7 @@ type Registry struct {
 	Password      string
 	Status        registrystatus.RegistryStatus
 	SupportsHTTP3 bool
+	AutoDetected  bool
 }
 
 func (i *Registry) Title() string       { return i.URL }
@@ -72,6 +73,8 @@ func (d *registryListDelegate) Render(w io.Writer, m list.Model, index int, item
 	uri := strings.TrimPrefix(r.URL, "https://")
 	uri = strings.TrimPrefix(uri, "http://")
 
+	username := lo.Ternary(r.Username != "", "@"+r.Username, "anonymous")
+
 	out := lipgloss.JoinHorizontal(
 		lipgloss.Top,
 		" ",
@@ -80,7 +83,7 @@ func (d *registryListDelegate) Render(w io.Writer, m list.Model, index int, item
 		lipgloss.JoinVertical(
 			lipgloss.Left,
 			titleStyle.Render(uri),
-			subtitleStyle.Render("@"+r.Username),
+			subtitleStyle.Render(username),
 		),
 	)
 
@@ -94,7 +97,26 @@ func (d *registryListDelegate) Render(w io.Writer, m list.Model, index int, item
 
 	out = leftBorder.Render(out)
 
-	out = lipgloss.NewStyle().MarginBottom(1).Render(out)
+	autoDetectedBadge := ""
 
-	fmt.Fprint(w, out)
+	if r.AutoDetected {
+		autoDetectedBadge = lipgloss.NewStyle().
+			Padding(0, 1).
+			Background(lipgloss.White).
+			Foreground(lipgloss.Black).
+			Bold(true).
+			Render("AUTO-DETECTED")
+	}
+
+	out = lipgloss.NewStyle().
+		MarginBottom(1).
+		Width(m.Width() - lipgloss.Width(autoDetectedBadge) - 2).
+		Render(out)
+
+	fmt.Fprint(w,
+		lipgloss.JoinHorizontal(lipgloss.Top,
+			out,
+			autoDetectedBadge,
+		),
+	)
 }

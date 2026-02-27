@@ -2,39 +2,19 @@ package main
 
 import (
 	"log"
-	"strings"
 
 	tea "charm.land/bubbletea/v2"
-	"github.com/docker/cli/cli/config"
 	"github.com/ksckaan1/crtui/cmd/crtui/tui/registrylist"
+	"github.com/ksckaan1/crtui/config"
 )
 
 func main() {
-	cfg, err := config.Load(config.Dir())
+	cfg, err := config.New(false)
 	if err != nil {
-		log.Fatalf("config.Load: %v", err)
+		panic(err)
 	}
 
-	creds, err := cfg.GetAllCredentials()
-	if err != nil {
-		log.Fatalf("cfg.GetAllCredentials: %v", err)
-	}
-
-	registries := make([]*registrylist.Registry, 0)
-
-	for key, authConfig := range creds {
-		if strings.HasPrefix(key, "https://index.docker.io/v1/") {
-			continue
-		}
-
-		registries = append(registries, &registrylist.Registry{
-			URL:      key,
-			Username: authConfig.Username,
-			Password: authConfig.Password,
-		})
-	}
-
-	registryListModel := registrylist.NewModel(registries)
+	registryListModel := registrylist.NewModel(cfg)
 
 	program := tea.NewProgram(registryListModel)
 	_, err = program.Run()

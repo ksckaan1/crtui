@@ -71,6 +71,9 @@ func (m *KeysWindow) SetKeyMap(keyMap any) {
 		if !ok {
 			continue
 		}
+		if fieldVal.Help().Desc == "" {
+			continue
+		}
 		keys = append(keys, fieldVal)
 	}
 

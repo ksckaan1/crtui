@@ -26,7 +26,7 @@ func fetchRegistry(index int, registry *Registry) tea.Cmd {
 			return registryResult{
 				index:         index,
 				status:        registrystatus.Offline,
-				supportsHTTP3: ri.SupportsHTTP3,
+				supportsHTTP3: false,
 			}
 		}
 

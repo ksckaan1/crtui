@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/term"
 )
@@ -32,7 +33,7 @@ func NewStatus() *Status {
 	return &Status{}
 }
 
-func (s *Status) SetStatus(statusType StatusType, statusText string, took ...time.Duration) {
+func (s *Status) SetStatus(statusType StatusType, statusText string, took ...time.Duration) tea.Cmd {
 	tookDur := time.Duration(0)
 	if len(took) > 0 {
 		tookDur = took[0]
@@ -41,7 +42,7 @@ func (s *Status) SetStatus(statusType StatusType, statusText string, took ...tim
 	s.statusType = statusType
 
 	if statusType == Empty {
-		return
+		return tea.RequestWindowSize
 	}
 
 	var badgeColor color.Color
@@ -79,6 +80,8 @@ func (s *Status) SetStatus(statusType StatusType, statusText string, took ...tim
 	s.tookStr = tookStr
 
 	s.statusText = statusText
+
+	return tea.RequestWindowSize
 }
 
 func (s *Status) View() string {

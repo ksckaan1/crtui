@@ -7,6 +7,8 @@ type keyMapT struct {
 	SelectRegistry key.Binding
 	Refresh        key.Binding
 	Filter         key.Binding
+	New            key.Binding
+	Esc            key.Binding
 	Quit           key.Binding
 }
 
@@ -25,6 +27,13 @@ var keyMap = keyMapT{
 	Filter: key.NewBinding(
 		key.WithKeys("/"),
 		key.WithHelp("/", "Filter"),
+	),
+	New: key.NewBinding(
+		key.WithKeys("n"),
+		key.WithHelp("n", "New"),
+	),
+	Esc: key.NewBinding(
+		key.WithKeys("esc"),
 	),
 	Quit: key.NewBinding(
 		key.WithKeys("ctrl+c"),
