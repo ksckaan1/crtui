@@ -153,7 +153,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.tagListUI.FilterState() != list.Filtering &&
 			len(m.repositoryList) > 1:
 			if m.activePaneIndex == 0 {
-				*m.selectedRepository = m.repositoryList[m.repositoryListUI.Index()].Name
+				*m.selectedRepository = m.repositoryList[m.repositoryListUI.GlobalIndex()].Name
 				m.activePaneIndex = 1
 				m.isTagsLoading = true
 				m.status.SetStatus(ui.Info, "Loading tag list...")
@@ -163,7 +163,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 			if m.activePaneIndex == 1 {
-				m.selectedTag = m.tagList[m.tagListUI.Index()].Name
+				m.selectedTag = m.tagList[m.tagListUI.GlobalIndex()].Name
 				m.status.SetStatus(ui.Empty, "")
 
 				return nav.Navigate(

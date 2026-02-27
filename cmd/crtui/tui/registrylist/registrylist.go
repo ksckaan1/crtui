@@ -150,8 +150,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// SELECT REGISTRY
 		case key.Matches(msg, keyMap.SelectRegistry) &&
 			!m.isTyping() &&
-			m.registries[m.list.Index()].Status == registrystatus.Online:
-			reg := m.registries[m.list.Index()]
+			m.registries[m.list.GlobalIndex()].Status == registrystatus.Online:
+			reg := m.registries[m.list.GlobalIndex()]
 			m.status.SetStatus(ui.Empty, "")
 			return nav.Navigate(
 				registrydetails.NewRegistryDetails(
