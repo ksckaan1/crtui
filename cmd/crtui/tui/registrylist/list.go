@@ -3,7 +3,6 @@ package registrylist
 import (
 	"fmt"
 	"io"
-	"strings"
 
 	"charm.land/bubbles/v2/list"
 	tea "charm.land/bubbletea/v2"
@@ -70,9 +69,6 @@ func (d *registryListDelegate) Render(w io.Writer, m list.Model, index int, item
 		subtitleStyle = subtitleStyle.Foreground(lipgloss.Color("#FFFFFF")).Faint(false).Bold(true)
 	}
 
-	uri := strings.TrimPrefix(r.URL, "https://")
-	uri = strings.TrimPrefix(uri, "http://")
-
 	username := lo.Ternary(r.Username != "", "@"+r.Username, "anonymous")
 
 	out := lipgloss.JoinHorizontal(
@@ -82,7 +78,7 @@ func (d *registryListDelegate) Render(w io.Writer, m list.Model, index int, item
 		lo.Ternary(r.Status == "loading", "", " "),
 		lipgloss.JoinVertical(
 			lipgloss.Left,
-			titleStyle.Render(uri),
+			titleStyle.Render(ui.TrimURLScheme(r.URL)),
 			subtitleStyle.Render(username),
 		),
 	)

@@ -16,9 +16,9 @@ import (
 	"github.com/ksckaan1/crtui/internal/infra/registryclient"
 )
 
-var _ tea.Model = (*NewConnectionPopup)(nil)
+var _ tea.Model = (*NewOrEditConnectionPopup)(nil)
 
-type NewConnectionPopup struct {
+type NewOrEditConnectionPopup struct {
 	cfg                    *config.Config
 	status                 *ui.Status
 	back                   background
@@ -43,11 +43,12 @@ type background interface {
 	UpdateSize(tea.WindowSizeMsg)
 }
 
-func NewNewConnectionPopup(
+func NewNewOrEditConnectionPopup(
 	cfg *config.Config,
 	back background,
 	status *ui.Status,
-) *NewConnectionPopup {
+	registry *Registry,
+) *NewOrEditConnectionPopup {
 	ncw := ui.NewWindow()
 	ncw.SetWidth(40)
 	ncw.SetHeight(17)
@@ -85,7 +86,16 @@ func NewNewConnectionPopup(
 	testBtn := ui.NewButton("Test")
 	testBtn.SetNormalColors(lipgloss.White, lipgloss.Color("#444444"))
 
-	return &NewConnectionPopup{
+	if registry != nil {
+		crURLti.SetValue(registry.URL)
+		usernameti.SetValue(registry.Username)
+		passwordti.SetValue(registry.Password)
+		if registry.Username != "" || registry.Password != "" {
+			isAuthRequired.SetValue(true)
+		}
+	}
+
+	return &NewOrEditConnectionPopup{
 		cfg:                    cfg,
 		status:                 status,
 		back:                   back,
@@ -111,14 +121,14 @@ func NewNewConnectionPopup(
 	}
 }
 
-func (m *NewConnectionPopup) Init() tea.Cmd {
+func (m *NewOrEditConnectionPopup) Init() tea.Cmd {
 	return tea.Batch(
 		m.crURLtextInput.Focus(),
 		tea.RequestWindowSize,
 	)
 }
 
-func (m *NewConnectionPopup) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *NewOrEditConnectionPopup) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds := []tea.Cmd{}
 
 	switch msg := msg.(type) {
@@ -192,7 +202,7 @@ func (m *NewConnectionPopup) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m *NewConnectionPopup) onTest() (tea.Model, tea.Cmd) {
+func (m *NewOrEditConnectionPopup) onTest() (tea.Model, tea.Cmd) {
 	if m.crURLtextInput.Err != nil || m.crURLtextInput.Value() == "" {
 		return m, m.status.SetStatus(ui.Error, "Insert valid container registry url")
 	}
@@ -232,7 +242,7 @@ func (m *NewConnectionPopup) onTest() (tea.Model, tea.Cmd) {
 	return m, m.status.SetStatus(ui.Info, "Connection successful")
 }
 
-func (m *NewConnectionPopup) onCreate() (tea.Model, tea.Cmd) {
+func (m *NewOrEditConnectionPopup) onCreate() (tea.Model, tea.Cmd) {
 	if m.crURLtextInput.Err != nil || m.crURLtextInput.Value() == "" {
 		return m, m.status.SetStatus(ui.Error, "Insert valid container registry url")
 	}
@@ -267,7 +277,7 @@ func (m *NewConnectionPopup) onCreate() (tea.Model, tea.Cmd) {
 	return model, tea.Batch(cmds...)
 }
 
-func (m *NewConnectionPopup) View() tea.View {
+func (m *NewOrEditConnectionPopup) View() tea.View {
 	v := tea.NewView("")
 	v.AltScreen = true
 

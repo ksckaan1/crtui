@@ -8,6 +8,8 @@ type keyMapT struct {
 	Refresh        key.Binding
 	Filter         key.Binding
 	New            key.Binding
+	Edit           key.Binding
+	Delete         key.Binding
 	Esc            key.Binding
 	Quit           key.Binding
 }
@@ -31,6 +33,14 @@ var keyMap = keyMapT{
 	New: key.NewBinding(
 		key.WithKeys("n"),
 		key.WithHelp("n", "New"),
+	),
+	Edit: key.NewBinding(
+		key.WithKeys("e"),
+		key.WithHelp("e", "Edit"),
+	),
+	Delete: key.NewBinding(
+		key.WithKeys("ctrl+d"),
+		key.WithHelp("ctrl+d", "Delete"),
 	),
 	Esc: key.NewBinding(
 		key.WithKeys("esc"),

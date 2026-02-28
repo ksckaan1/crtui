@@ -172,7 +172,49 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case key.Matches(msg, keyMap.New) &&
 			!m.isTyping():
-			return nav.Navigate(NewNewConnectionPopup(m.cfg, m, m.status))
+			return nav.Navigate(
+				NewNewOrEditConnectionPopup(
+					m.cfg,
+					m,
+					m.status,
+					nil,
+				),
+			)
+
+		case key.Matches(msg, keyMap.Edit) &&
+			!m.isTyping() &&
+			len(m.registries) != 0:
+			targetRegistry := m.registries[m.list.GlobalIndex()]
+			if targetRegistry.AutoDetected {
+				return m, m.status.SetStatus(ui.Error, "Can't edit auto-detected registry")
+			}
+
+			m.status.SetStatus(ui.Empty, "")
+			return nav.Navigate(
+				NewNewOrEditConnectionPopup(
+					m.cfg,
+					m,
+					m.status,
+					m.registries[m.list.GlobalIndex()],
+				),
+			)
+
+		case key.Matches(msg, keyMap.Delete) &&
+			!m.isTyping() &&
+			len(m.registries) != 0:
+			targetRegistry := m.registries[m.list.GlobalIndex()]
+
+			if targetRegistry.AutoDetected {
+				return m, m.status.SetStatus(ui.Error, "Can't delete auto-detected registry")
+			}
+
+			m.status.SetStatus(ui.Empty, "")
+			return nav.Navigate(NewDeleteConnectionPopup(
+				m.cfg,
+				m,
+				m.status,
+				targetRegistry,
+			))
 
 		// QUIT PROGRAM
 		case key.Matches(msg, keyMap.Quit):
