@@ -6,7 +6,7 @@ import (
 	"github.com/ksckaan1/crtui/internal/core/models"
 )
 
-func (m *Model) drawUser(activePlatform models.Platform, width int) string {
+func (m *TagDetailsScreenModel) drawUser(activePlatform models.Platform, width int) string {
 	user := activePlatform.Config.User
 
 	if user == "" {

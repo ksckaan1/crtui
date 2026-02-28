@@ -8,7 +8,7 @@ import (
 	"github.com/ksckaan1/crtui/internal/core/models"
 )
 
-func (m *Model) drawEnvs(activePlatform models.Platform, width int) string {
+func (m *TagDetailsScreenModel) drawEnvs(activePlatform models.Platform, width int) string {
 	envs := activePlatform.Config.Env
 
 	if len(envs) == 0 {

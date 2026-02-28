@@ -11,7 +11,7 @@ import (
 	"github.com/samber/lo"
 )
 
-func (m *Model) drawLayers(activePlatform models.Platform, width int) string {
+func (m *TagDetailsScreenModel) drawLayers(activePlatform models.Platform, width int) string {
 	sizeBytes := lo.SumBy(
 		activePlatform.Layers,
 		func(item models.Layer) int {
@@ -100,7 +100,7 @@ func (m *Model) drawLayers(activePlatform models.Platform, width int) string {
 	return lipgloss.JoinVertical(lipgloss.Top, strs...)
 }
 
-func (m *Model) drawPercent(total, current int, width int) string {
+func (m *TagDetailsScreenModel) drawPercent(total, current int, width int) string {
 	if total <= 0 {
 		return strings.Repeat("░", width-8) + "   0.0%"
 	}

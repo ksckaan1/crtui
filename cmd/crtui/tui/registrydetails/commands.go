@@ -11,7 +11,7 @@ type repositoryListResult struct {
 	err            error
 }
 
-func (m *Model) fetchRepositoryList() tea.Cmd {
+func (m *RegistryDetailsScreenModel) fetchRepositoryList() tea.Cmd {
 	return func() tea.Msg {
 		ctx := context.Background()
 
@@ -29,7 +29,7 @@ type tagListResult struct {
 	err     error
 }
 
-func (m *Model) fetchTagList() tea.Cmd {
+func (m *RegistryDetailsScreenModel) fetchTagList() tea.Cmd {
 	return func() tea.Msg {
 		ctx := context.Background()
 

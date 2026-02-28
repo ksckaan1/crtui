@@ -9,7 +9,7 @@ import (
 	"github.com/ksckaan1/crtui/internal/core/models"
 )
 
-func (m *Model) drawHistory(activePlatform models.Platform, width int) string {
+func (m *TagDetailsScreenModel) drawHistory(activePlatform models.Platform, width int) string {
 	strs := []string{
 		lipgloss.NewStyle().
 			Foreground(ui.PrimaryColor).

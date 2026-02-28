@@ -6,7 +6,7 @@ import (
 	"github.com/ksckaan1/crtui/internal/core/models"
 )
 
-func (m *Model) drawEntrypoint(activePlatform models.Platform, width int) string {
+func (m *TagDetailsScreenModel) drawEntrypoint(activePlatform models.Platform, width int) string {
 	entrypoint := activePlatform.Config.Entrypoint
 
 	if len(entrypoint) == 0 {

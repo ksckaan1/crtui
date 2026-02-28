@@ -17,12 +17,12 @@ import (
 	"github.com/samber/lo"
 )
 
-var _ tea.Model = (*Model)(nil)
+var _ tea.Model = (*TagDetailsScreenModel)(nil)
 
-type Model struct {
+type TagDetailsScreenModel struct {
 	rc              *registryclient.RegistryClient
 	spinner         spinner.Model
-	backModel       tea.Model
+	back            tea.Model
 	keysWindow      *ui.KeysWindow
 	heroWindow      *ui.Window
 	platformsWindow *ui.TabbedWindow
@@ -43,13 +43,13 @@ type Model struct {
 	minTerminalSizeWarning *ui.MinTerminalSizeWarning
 }
 
-func NewModel(
+func NewTagDetailsScreenModel(
 	rc *registryclient.RegistryClient,
 	repositoryName,
 	tagName string,
-	backModel tea.Model,
+	back tea.Model,
 	status *ui.Status,
-) *Model {
+) *TagDetailsScreenModel {
 	sp := spinner.New()
 	sp.Spinner = ui.LoadingSpinner
 
@@ -63,10 +63,10 @@ func NewModel(
 	kw.SetHeight(5)
 	kw.SetKeyMap(keyMap)
 
-	return &Model{
+	return &TagDetailsScreenModel{
 		rc:         rc,
 		spinner:    sp,
-		backModel:  backModel,
+		back:       back,
 		keysWindow: kw,
 		status:     status,
 
@@ -81,7 +81,7 @@ func NewModel(
 	}
 }
 
-func (m *Model) Init() tea.Cmd {
+func (m *TagDetailsScreenModel) Init() tea.Cmd {
 	cmds := []tea.Cmd{
 		m.spinner.Tick,
 		tea.RequestWindowSize,
@@ -93,18 +93,24 @@ func (m *Model) Init() tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
-func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *TagDetailsScreenModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, keyMap.DeleteTag):
-			m.isLoaded = false
-			m.status.SetStatus(ui.Info, "Deleting tag...")
-			return m, m.deleteTag()
+			return nav.Navigate(
+				NewDeleteTagPopupModel(
+					m.rc,
+					m,
+					m.status,
+					m.repositoryName,
+					m.tagName,
+				),
+			)
 
 		case key.Matches(msg, keyMap.Esc):
 			m.status.SetStatus(ui.Empty, "")
-			return nav.Navigate(m.backModel)
+			return nav.Navigate(m.back)
 
 		case key.Matches(msg, keyMap.Refresh):
 			m.isLoaded = false
@@ -124,11 +130,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case tea.WindowSizeMsg:
-		m.width, m.height = msg.Width, msg.Height
-		m.keysWindow.SetWidth(m.width - 29)
-		m.heroWindow.SetWidth(m.width - 2)
-		m.platformsWindow.SetWidth(m.width - 2)
-		m.platformsWindow.SetHeight(m.height - 13 - lipgloss.Height(m.status.View()))
+		m.UpdateSize(msg)
 
 	case tagMsg:
 		m.tag = msg.tag
@@ -147,14 +149,6 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.err != nil {
 			m.status.SetStatus(ui.Error, fmt.Sprintf("Failed to load tag details: %s", msg.err.Error()), took)
 		}
-
-	case deleteTagMsg:
-		m.isLoaded = true
-		m.err = msg.err
-
-		if m.err == nil {
-			return nav.Navigate(m.backModel)
-		}
 	}
 
 	cmds := []tea.Cmd{}
@@ -170,7 +164,15 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m *Model) View() tea.View {
+func (m *TagDetailsScreenModel) UpdateSize(msg tea.WindowSizeMsg) {
+	m.width, m.height = msg.Width, msg.Height
+	m.keysWindow.SetWidth(m.width - 29)
+	m.heroWindow.SetWidth(m.width - 2)
+	m.platformsWindow.SetWidth(m.width - 2)
+	m.platformsWindow.SetHeight(m.height - 13 - lipgloss.Height(m.status.View()))
+}
+
+func (m *TagDetailsScreenModel) View() tea.View {
 	v := tea.NewView("")
 	v.AltScreen = true
 
@@ -224,7 +226,7 @@ func (m *Model) View() tea.View {
 	return v
 }
 
-func (m *Model) drawHeader() string {
+func (m *TagDetailsScreenModel) drawHeader() string {
 	out := lipgloss.JoinHorizontal(
 		lipgloss.Top,
 		figlet.Figlet,
@@ -235,7 +237,7 @@ func (m *Model) drawHeader() string {
 	return out
 }
 
-func (m *Model) drawTop(width, _ int) string {
+func (m *TagDetailsScreenModel) drawTop(width, _ int) string {
 	totalSizeBytes := lo.SumBy(m.tag.Platforms, func(item models.Platform) int {
 		return lo.SumBy(item.Layers, func(layer models.Layer) int {
 			return layer.Size
@@ -280,7 +282,7 @@ func (m *Model) drawTop(width, _ int) string {
 	)
 }
 
-func (m *Model) drawPlatforms(width, height, activeTabIndex int) string {
+func (m *TagDetailsScreenModel) drawPlatforms(width, height, activeTabIndex int) string {
 	activePlatform := m.tag.Platforms[activeTabIndex]
 
 	strs := []string{}

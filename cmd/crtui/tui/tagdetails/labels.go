@@ -10,7 +10,7 @@ import (
 	"github.com/samber/lo"
 )
 
-func (m *Model) drawLabels(activePlatform models.Platform, width int) string {
+func (m *TagDetailsScreenModel) drawLabels(activePlatform models.Platform, width int) string {
 	labelMap := maps.Clone(activePlatform.Config.Labels)
 
 	if len(labelMap) == 0 {

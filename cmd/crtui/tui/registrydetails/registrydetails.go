@@ -25,9 +25,9 @@ type Registry struct {
 	SupportsHTTPS3 bool
 }
 
-var _ tea.Model = (*Model)(nil)
+var _ tea.Model = (*RegistryDetailsScreenModel)(nil)
 
-type Model struct {
+type RegistryDetailsScreenModel struct {
 	// ui
 	keysWindow         *ui.KeysWindow
 	spinner            spinner.Model
@@ -60,11 +60,11 @@ type Model struct {
 	status                 *ui.Status
 }
 
-func NewRegistryDetails(
+func NewRegistryDetailsScreenModel(
 	registry *Registry,
 	backModel tea.Model,
 	status *ui.Status,
-) *Model {
+) *RegistryDetailsScreenModel {
 	rc := registryclient.New(
 		registry.URL,
 		registry.Username,
@@ -91,7 +91,7 @@ func NewRegistryDetails(
 	tagList.DisableQuitKeybindings()
 	tagList.SetShowStatusBar(false)
 
-	return &Model{
+	return &RegistryDetailsScreenModel{
 		registry:           registry,
 		rc:                 rc,
 		keysWindow:         kw,
@@ -111,7 +111,7 @@ func NewRegistryDetails(
 	}
 }
 
-func (m *Model) Init() tea.Cmd {
+func (m *RegistryDetailsScreenModel) Init() tea.Cmd {
 	m.repositoryListUI.SetDelegate(&repositoryListDelegate{
 		selectedRepository: m.selectedRepository,
 	})
@@ -134,7 +134,7 @@ func (m *Model) Init() tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
-func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *RegistryDetailsScreenModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
@@ -152,7 +152,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.repositoryListUI.FilterState() != list.Filtering &&
 			m.tagListUI.FilterState() != list.Filtering &&
 			len(m.repositoryList) > 1:
-			if m.activePaneIndex == 0 {
+			if m.activePaneIndex == 0 && len(m.repositoryList) > 0 {
 				*m.selectedRepository = m.repositoryList[m.repositoryListUI.GlobalIndex()].Name
 				m.activePaneIndex = 1
 				m.isTagsLoading = true
@@ -162,12 +162,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, tea.Batch(m.fetchTagList(), tea.RequestWindowSize)
 			}
 
-			if m.activePaneIndex == 1 {
+			if m.activePaneIndex == 1 && len(m.tagList) > 0 {
 				m.selectedTag = m.tagList[m.tagListUI.GlobalIndex()].Name
 				m.status.SetStatus(ui.Empty, "")
 
 				return nav.Navigate(
-					tagdetails.NewModel(
+					tagdetails.NewTagDetailsScreenModel(
 						m.rc,
 						*m.selectedRepository,
 						m.selectedTag,
@@ -297,7 +297,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m *Model) View() tea.View {
+func (m *RegistryDetailsScreenModel) View() tea.View {
 	v := tea.NewView("")
 	v.AltScreen = true
 
@@ -327,7 +327,7 @@ func (m *Model) View() tea.View {
 	return v
 }
 
-func (m *Model) drawHeader() string {
+func (m *RegistryDetailsScreenModel) drawHeader() string {
 	out := lipgloss.JoinHorizontal(
 		lipgloss.Top,
 		figlet.Figlet,
@@ -338,7 +338,7 @@ func (m *Model) drawHeader() string {
 	return out
 }
 
-func (m *Model) drawContent() string {
+func (m *RegistryDetailsScreenModel) drawContent() string {
 	content := []string{}
 
 	content = append(content, m.drawRepositories())
@@ -355,7 +355,7 @@ func (m *Model) drawContent() string {
 	)
 }
 
-func (m *Model) drawRepositories() string {
+func (m *RegistryDetailsScreenModel) drawRepositories() string {
 	m.repositoriesWindow.SetBorderColor(nil)
 	if m.activePaneIndex == 0 {
 		m.repositoriesWindow.SetBorderColor(lipgloss.Color("#FFFFFF"))
@@ -388,7 +388,7 @@ func (m *Model) drawRepositories() string {
 	return m.repositoriesWindow.View()
 }
 
-func (m *Model) drawTags() string {
+func (m *RegistryDetailsScreenModel) drawTags() string {
 	m.tagsWindow.SetBorderColor(nil)
 	if m.activePaneIndex == 1 {
 		m.tagsWindow.SetBorderColor(lipgloss.Color("#FFFFFF"))

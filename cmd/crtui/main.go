@@ -14,9 +14,9 @@ func main() {
 		panic(err)
 	}
 
-	registryListModel := registrylist.NewModel(cfg)
+	registryListScreen := registrylist.NewRegistryListScreenModel(cfg)
 
-	program := tea.NewProgram(registryListModel)
+	program := tea.NewProgram(registryListScreen)
 	_, err = program.Run()
 	if err != nil {
 		log.Fatalf("program.Run: %v", err)

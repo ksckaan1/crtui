@@ -6,7 +6,7 @@ import (
 	"github.com/ksckaan1/crtui/internal/core/models"
 )
 
-func (m *Model) drawCmd(activePlatform models.Platform, width int) string {
+func (m *TagDetailsScreenModel) drawCmd(activePlatform models.Platform, width int) string {
 	cmds := activePlatform.Config.Cmd
 
 	if len(cmds) == 0 {

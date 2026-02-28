@@ -12,7 +12,7 @@ type tagMsg struct {
 	err error
 }
 
-func (m *Model) fetchTag() tea.Cmd {
+func (m *TagDetailsScreenModel) fetchTag() tea.Cmd {
 	return func() tea.Msg {
 		tag, err := m.rc.GetTag(context.Background(), m.repositoryName, m.tagName)
 		return tagMsg{tag: tag, err: err}
@@ -23,7 +23,7 @@ type deleteTagMsg struct {
 	err error
 }
 
-func (m *Model) deleteTag() tea.Cmd {
+func (m *DeleteTagPopupModel) deleteTag() tea.Cmd {
 	return func() tea.Msg {
 		err := m.rc.DeleteTag(context.Background(), m.repositoryName, m.tagName)
 		return deleteTagMsg{err: err}

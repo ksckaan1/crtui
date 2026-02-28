@@ -9,7 +9,7 @@ import (
 	"github.com/ksckaan1/crtui/internal/core/models"
 )
 
-func (m *Model) drawRootFS(activePlatform models.Platform, width int) string {
+func (m *TagDetailsScreenModel) drawRootFS(activePlatform models.Platform, width int) string {
 	rootFS := activePlatform.Config.RootFS
 
 	strs := []string{

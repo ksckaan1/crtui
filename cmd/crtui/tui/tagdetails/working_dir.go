@@ -6,7 +6,7 @@ import (
 	"github.com/ksckaan1/crtui/internal/core/models"
 )
 
-func (m *Model) drawWorkingDir(activePlatform models.Platform, width int) string {
+func (m *TagDetailsScreenModel) drawWorkingDir(activePlatform models.Platform, width int) string {
 	wd := activePlatform.Config.WorkingDir
 
 	if wd == "" {

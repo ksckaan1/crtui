@@ -5,7 +5,7 @@ import (
 	"github.com/samber/lo"
 )
 
-func (m *Model) drawField(title, content string, width int) string {
+func (m *TagDetailsScreenModel) drawField(title, content string, width int) string {
 	keyField := lipgloss.NewStyle().
 		Faint(true).
 		Width(width - 2)

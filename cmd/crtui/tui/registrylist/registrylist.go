@@ -24,9 +24,9 @@ type focusable interface {
 	Reset()
 }
 
-var _ tea.Model = (*Model)(nil)
+var _ tea.Model = (*RegistryListScreenModel)(nil)
 
-type Model struct {
+type RegistryListScreenModel struct {
 	cfg                *config.Config
 	keysWindow         *ui.KeysWindow
 	statusesWindow     *ui.Window
@@ -44,7 +44,7 @@ type Model struct {
 	status                 *ui.Status
 }
 
-func NewModel(cfg *config.Config) *Model {
+func NewRegistryListScreenModel(cfg *config.Config) *RegistryListScreenModel {
 	sp := spinner.New()
 	sp.Spinner = spinner.Dot
 
@@ -85,7 +85,7 @@ func NewModel(cfg *config.Config) *Model {
 		return statusContainer.Render(statusContent)
 	})
 
-	return &Model{
+	return &RegistryListScreenModel{
 		cfg:                    cfg,
 		keysWindow:             kw,
 		statusesWindow:         sw,
@@ -98,7 +98,7 @@ func NewModel(cfg *config.Config) *Model {
 	}
 }
 
-func (m *Model) Init() tea.Cmd {
+func (m *RegistryListScreenModel) Init() tea.Cmd {
 	cmds := []tea.Cmd{m.spinner.Tick, tea.RequestWindowSize}
 
 	m.list.SetDelegate(&registryListDelegate{
@@ -141,7 +141,7 @@ func (m *Model) Init() tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
-func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *RegistryListScreenModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds := []tea.Cmd{}
 
 	switch msg := msg.(type) {
@@ -154,7 +154,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			reg := m.registries[m.list.GlobalIndex()]
 			m.status.SetStatus(ui.Empty, "")
 			return nav.Navigate(
-				registrydetails.NewRegistryDetails(
+				registrydetails.NewRegistryDetailsScreenModel(
 					&registrydetails.Registry{
 						URL:            reg.URL,
 						Username:       reg.Username,
@@ -241,7 +241,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m *Model) UpdateSize(msg tea.WindowSizeMsg) {
+func (m *RegistryListScreenModel) UpdateSize(msg tea.WindowSizeMsg) {
 	m.width = msg.Width
 	m.height = msg.Height
 	m.keysWindow.SetWidth(m.width - 44)
@@ -249,7 +249,7 @@ func (m *Model) UpdateSize(msg tea.WindowSizeMsg) {
 	m.registryListWindow.SetHeight(m.height - 8 - m.status.Height())
 }
 
-func (m *Model) View() tea.View {
+func (m *RegistryListScreenModel) View() tea.View {
 	v := tea.NewView("")
 	v.AltScreen = true
 
@@ -306,7 +306,7 @@ func (m *Model) View() tea.View {
 	return v
 }
 
-func (m *Model) drawHeader() string {
+func (m *RegistryListScreenModel) drawHeader() string {
 	out := lipgloss.JoinHorizontal(
 		lipgloss.Top,
 		figlet.Figlet,
@@ -319,13 +319,13 @@ func (m *Model) drawHeader() string {
 	return out
 }
 
-func (m *Model) fetchRegistries() []tea.Cmd {
+func (m *RegistryListScreenModel) fetchRegistries() []tea.Cmd {
 	return lo.Map(m.registries, func(item *Registry, i int) tea.Cmd {
 		item.Status = registrystatus.Loading
 		return fetchRegistry(i, item)
 	})
 }
 
-func (m *Model) isTyping() bool {
+func (m *RegistryListScreenModel) isTyping() bool {
 	return m.list.FilterState() == list.Filtering
 }
