@@ -150,8 +150,7 @@ func (m *RegistryDetailsScreenModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case key.Matches(msg, keyMap.SelectItem) &&
 			m.repositoryListUI.FilterState() != list.Filtering &&
-			m.tagListUI.FilterState() != list.Filtering &&
-			len(m.repositoryList) > 1:
+			m.tagListUI.FilterState() != list.Filtering:
 			if m.activePaneIndex == 0 && len(m.repositoryList) > 0 {
 				*m.selectedRepository = m.repositoryList[m.repositoryListUI.GlobalIndex()].Name
 				m.activePaneIndex = 1
@@ -173,6 +172,23 @@ func (m *RegistryDetailsScreenModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						m.selectedTag,
 						m,
 						m.status,
+					),
+				)
+			}
+
+		case key.Matches(msg, keyMap.Delete) &&
+			m.repositoryListUI.FilterState() != list.Filtering &&
+			m.tagListUI.FilterState() != list.Filtering:
+			if m.activePaneIndex == 0 && len(m.repositoryList) > 0 {
+
+				return nav.Navigate(
+					NewDeleteTagsPopup(
+						m.rc,
+						m,
+						m.status,
+						m.repositoryList[m.repositoryListUI.GlobalIndex()].Name,
+						nil,
+						m.spinner,
 					),
 				)
 			}
@@ -205,16 +221,7 @@ func (m *RegistryDetailsScreenModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case tea.WindowSizeMsg:
-		m.width, m.height = msg.Width, msg.Height
-		m.keysWindow.SetWidth(m.width - 29)
-		m.repositoriesWindow.SetHeight(m.height - 8 - m.status.Height())
-		if *m.selectedRepository == "" {
-			m.repositoriesWindow.SetWidth(m.width - 2)
-		} else {
-			m.repositoriesWindow.SetWidth(m.width/2 - 1)
-		}
-		m.tagsWindow.SetHeight(m.height - 8 - m.status.Height())
-		m.tagsWindow.SetWidth(m.width - lipgloss.Width(m.repositoriesWindow.View()) - 2)
+		m.UpdateSize(msg)
 
 	case repositoryListResult:
 		m.isRepositoriesLoading = false
@@ -295,6 +302,19 @@ func (m *RegistryDetailsScreenModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	return m, tea.Batch(cmds...)
+}
+
+func (m *RegistryDetailsScreenModel) UpdateSize(msg tea.WindowSizeMsg) {
+	m.width, m.height = msg.Width, msg.Height
+	m.keysWindow.SetWidth(m.width - 29)
+	m.repositoriesWindow.SetHeight(m.height - 8 - m.status.Height())
+	if *m.selectedRepository == "" {
+		m.repositoriesWindow.SetWidth(m.width - 2)
+	} else {
+		m.repositoriesWindow.SetWidth(m.width/2 - 1)
+	}
+	m.tagsWindow.SetHeight(m.height - 8 - m.status.Height())
+	m.tagsWindow.SetWidth(m.width - lipgloss.Width(m.repositoriesWindow.View()) - 2)
 }
 
 func (m *RegistryDetailsScreenModel) View() tea.View {

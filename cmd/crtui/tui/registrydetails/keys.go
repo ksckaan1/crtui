@@ -8,6 +8,7 @@ type keyMapT struct {
 	Refresh    key.Binding
 	Filter     key.Binding
 	SwitchPane key.Binding
+	Delete     key.Binding
 	Esc        key.Binding
 	Quit       key.Binding
 }
@@ -31,6 +32,10 @@ var keyMap = keyMapT{
 	SwitchPane: key.NewBinding(
 		key.WithKeys("tab"),
 		key.WithHelp("tab", "Switch pane"),
+	),
+	Delete: key.NewBinding(
+		key.WithKeys("ctrl+d"),
+		key.WithHelp("ctrl+d", "Delete repo/tags"),
 	),
 	Esc: key.NewBinding(
 		key.WithKeys("esc"),
