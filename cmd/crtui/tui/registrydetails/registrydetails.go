@@ -400,6 +400,14 @@ func (m *RegistryDetailsScreenModel) drawRepositories() string {
 	))
 
 	m.repositoriesWindow.SetContent(func(width, height int) string {
+		if len(m.repositoryList) == 0 && m.isRepositoriesLoading {
+			return "Loading repositories..."
+		}
+
+		if len(m.repositoryList) == 0 {
+			return "No repositories found"
+		}
+
 		m.repositoryListUI.SetWidth(width)
 		m.repositoryListUI.SetHeight(height)
 		return m.repositoryListUI.View()
@@ -433,6 +441,14 @@ func (m *RegistryDetailsScreenModel) drawTags() string {
 	))
 
 	m.tagsWindow.SetContent(func(width, height int) string {
+		if len(m.tagList) == 0 && m.isTagsLoading {
+			return "Loading tags..."
+		}
+
+		if len(m.tagList) == 0 {
+			return "No tags found"
+		}
+
 		m.tagListUI.SetWidth(width)
 		m.tagListUI.SetHeight(height)
 		return m.tagListUI.View()
