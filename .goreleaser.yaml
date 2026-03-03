@@ -28,7 +28,7 @@ brews:
   - name: crtui
     repository:
       owner: ksckaan1
-      name: tap
+      name: homebrew-tap
 
 checksum:
   name_template: "checksums.txt"
