@@ -5,7 +5,7 @@ install:
 	@go install ./cmd/crtui
 
 build:
-	@goreleaser build --snapshot --clean
+	@goreleaser release --snapshot --clean
 
 release:
 	@goreleaser release --clean

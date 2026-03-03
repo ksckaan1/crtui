@@ -13,6 +13,20 @@ archives:
     files:
       - LICENSE
 
+nfpms:
+  - id: default
+    formats:
+      - deb
+      - rpm
+    vendor: crtui
+    homepage: https://github.com/ksckaan1/crtui
+    maintainer: Kaan Kuscu
+    description: Terminal-based container registry management tool
+    license: MIT
+
+brews:
+  - name: crtui
+
 checksum:
   name_template: "checksums.txt"
 
