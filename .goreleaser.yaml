@@ -45,7 +45,7 @@ release:
   github:
     owner: ksckaan1
     name: crtui
-  draft: false
+  draft: true
   prerelease: auto
 
 builds:
