@@ -1,0 +1,46 @@
+version: 2
+
+project_name: crtui
+
+archives:
+  - id: default
+    formats:
+      - tar.gz
+    format_overrides:
+      - goos: windows
+        formats:
+          - zip
+    files:
+      - LICENSE
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+
+release:
+  github:
+    owner: ksckaan1
+    name: crtui
+  draft: false
+  prerelease: auto
+
+builds:
+  - id: crtui
+    main: ./cmd/crtui
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    binary: crtui
+    env:
+      - CGO_ENABLED=0
