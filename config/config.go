@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/base64"
 	"fmt"
 	"io"
 	"os"
@@ -18,9 +19,10 @@ type Config struct {
 	configFile        *os.File
 	data              *data
 	autoDetectedAuths []*Auth
+	isKeyringEnabled  bool
 }
 
-func New(test bool) (*Config, error) {
+func New(test bool, keyringEnabled bool) (*Config, error) {
 	filename := "config.yaml"
 	if test {
 		filename = "test_config.yaml"
@@ -51,7 +53,7 @@ func New(test bool) (*Config, error) {
 	if len(b) != 0 {
 		err = yaml.Unmarshal(b, &d)
 		if err != nil {
-			return nil, fmt.Errorf("yaml.Unmarshal: %w", err)
+			return nil, fmt.Errorf("yaml.Unmarshal: %w (%s)", err, configFilePath)
 		}
 	}
 
@@ -64,6 +66,7 @@ func New(test bool) (*Config, error) {
 		configFile:        configFile,
 		data:              &d,
 		autoDetectedAuths: autoDetectedAuths,
+		isKeyringEnabled:  keyringEnabled,
 	}, nil
 }
 
@@ -75,15 +78,28 @@ func (c *Config) ListAuths() ([]*Auth, error) {
 	results := make([]*Auth, 0)
 
 	for url, usernameMap := range c.data.Auths {
-		for _, username := range usernameMap {
-			password, err := keyring.Get("crtui", fmt.Sprintf("%s@%s", username, url))
-			if err != nil {
-				return nil, fmt.Errorf("keyring.Get: %w", err)
+		for _, authData := range usernameMap {
+			var (
+				password string
+				err      error
+			)
+
+			if authData.Password == "" && c.isKeyringEnabled {
+				password, err = keyring.Get("crtui", fmt.Sprintf("%s@%s", authData.Username, url))
+				if err != nil {
+					return nil, fmt.Errorf("keyring.Get: %w", err)
+				}
+			} else {
+				passwordBytes, err := base64.StdEncoding.DecodeString(authData.Password)
+				if err != nil {
+					return nil, fmt.Errorf("base64.StdEncoding.DecodeString: %w", err)
+				}
+				password = string(passwordBytes)
 			}
 
 			results = append(results, &Auth{
 				URL:      url,
-				Username: username,
+				Username: authData.Username,
 				Password: password,
 			})
 		}
@@ -112,13 +128,30 @@ func (c *Config) GetAuth(url, username string) (*Auth, error) {
 		return nil, fmt.Errorf("url not found")
 	}
 
-	if !slices.Contains(v, username) {
+	foundAuth, ok := lo.Find(v, func(item authData) bool {
+		return item.Username == username
+
+	})
+	if !ok {
 		return nil, fmt.Errorf("username not found")
 	}
 
-	password, err := keyring.Get("crtui", fmt.Sprintf("%s@%s", username, url))
-	if err != nil {
-		return nil, fmt.Errorf("keyring.Get: %w", err)
+	var (
+		password string
+		err      error
+	)
+
+	if foundAuth.Password == "" && c.isKeyringEnabled {
+		password, err = keyring.Get("crtui", fmt.Sprintf("%s@%s", username, url))
+		if err != nil {
+			return nil, fmt.Errorf("keyring.Get: %w", err)
+		}
+	} else {
+		passwordBytes, err := base64.StdEncoding.DecodeString(foundAuth.Password)
+		if err != nil {
+			return nil, fmt.Errorf("base64.StdEncoding.DecodeString: %w", err)
+		}
+		password = string(passwordBytes)
 	}
 
 	return &Auth{
@@ -136,20 +169,28 @@ func (c *Config) SetAuth(url, username, password string) error {
 	}
 
 	if c.data.Auths == nil {
-		c.data.Auths = make(map[string][]string)
+		c.data.Auths = make(map[string][]authData)
 	}
 
 	if _, ok := c.data.Auths[url]; !ok {
-		c.data.Auths[url] = make([]string, 0)
-	}
-
-	if !slices.Contains(c.data.Auths[url], username) {
-		c.data.Auths[url] = append(c.data.Auths[url], username)
+		c.data.Auths[url] = make([]authData, 0)
 	}
 
 	err := keyring.Set("crtui", fmt.Sprintf("%s@%s", username, url), password)
-	if err != nil {
-		return fmt.Errorf("keyring.Set: %w", err)
+	if err == nil && c.isKeyringEnabled {
+		password = ""
+	} else {
+		password = base64.StdEncoding.EncodeToString([]byte(password))
+	}
+
+	_, index, ok := lo.FindIndexOf(c.data.Auths[url], func(item authData) bool {
+		return item.Username == username
+	})
+
+	if !ok {
+		c.data.Auths[url] = append(c.data.Auths[url], authData{Username: username, Password: password})
+	} else {
+		c.data.Auths[url][index].Password = password
 	}
 
 	err = c.save()
@@ -169,16 +210,21 @@ func (c *Config) DeleteAuth(url, username string) error {
 		return nil
 	}
 
-	c.data.Auths[url] = lo.Filter(c.data.Auths[url], func(item string, _ int) bool {
-		return item != username
-	})
-
-	err := keyring.Delete("crtui", fmt.Sprintf("%s@%s", username, url))
-	if err != nil {
-		return fmt.Errorf("keyring.Delete: %w", err)
+	if _, ok := lo.Find(c.data.Auths[url], func(item authData) bool {
+		return item.Username == username
+	}); !ok {
+		return nil
 	}
 
-	err = c.save()
+	c.data.Auths[url] = lo.Filter(c.data.Auths[url], func(item authData, _ int) bool {
+		return item.Username != username
+	})
+
+	if c.isKeyringEnabled {
+		keyring.Delete("crtui", fmt.Sprintf("%s@%s", username, url))
+	}
+
+	err := c.save()
 	if err != nil {
 		return fmt.Errorf("save: %w", err)
 	}

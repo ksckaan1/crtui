@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"os"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/ksckaan1/crtui/cmd/crtui/tui/registrylist"
@@ -9,9 +11,10 @@ import (
 )
 
 func main() {
-	cfg, err := config.New(false)
+	cfg, err := config.New(false, true)
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 
 	registryListScreen := registrylist.NewRegistryListScreenModel(cfg)

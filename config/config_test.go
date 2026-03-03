@@ -7,7 +7,7 @@ import (
 )
 
 func TestRun(t *testing.T) {
-	cfg, err := New(true)
+	cfg, err := New(true, true)
 	require.NoError(t, err)
 
 	err = cfg.SetAuth("https://test.com", "ksckaan1", "abc123")

@@ -1,7 +1,12 @@
 package config
 
 type data struct {
-	Auths map[string][]string `yaml:"auths"`
+	Auths map[string][]authData `yaml:"auths"`
+}
+
+type authData struct {
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
 }
 
 type Auth struct {
