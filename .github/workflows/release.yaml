@@ -5,6 +5,12 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      snapshot:
+        description: 'Run as snapshot build'
+        required: false
+        default: 'false'
+        type: boolean
 
 permissions:
   contents: write
@@ -28,6 +34,6 @@ jobs:
         with:
           distribution: goreleaser
           version: '~> v2'
-          args: release --clean
+          args: release --clean {{ github.event.inputs.snapshot == 'true' && '--snapshot' || '' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
