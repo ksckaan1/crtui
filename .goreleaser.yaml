@@ -24,7 +24,11 @@ nfpms:
     description: Terminal-based container registry management tool
     license: MIT
 
-brews: []
+brews:
+  - name: crtui
+    repository:
+      owner: ksckaan1
+      name: homebrew-crtui
 
 checksum:
   name_template: "checksums.txt"
