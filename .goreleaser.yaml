@@ -52,19 +52,14 @@ changelog:
       - "^test:"
       - "^chore:"
 
-release:
-  github:
-    owner: ksckaan1
-    name: crtui
-  draft: false
-  prerelease: auto
-  after_deploy:
+after:
+  hooks:
     - script: bash
       name: upload_to_cloudsmith
       timeout: 2m
       cmd: bash scripts/upload_cloudsmith.sh
 
-builds:
+release:
   - id: crtui
     main: ./cmd/crtui
     goos:
