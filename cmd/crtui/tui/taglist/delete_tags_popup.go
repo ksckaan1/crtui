@@ -1,4 +1,4 @@
-package registrydetails
+package taglist
 
 import (
 	"charm.land/bubbles/v2/spinner"
@@ -16,7 +16,7 @@ var _ tea.Model = (*DeleteTagsPopup)(nil)
 type DeleteTagsPopup struct {
 	rc                     *registryclient.RegistryClient
 	status                 *ui.Status
-	back                   *RegistryDetailsScreenModel
+	back                   *TagListScreenModel
 	backgroundText         string
 	minTerminalSizeWarning *ui.MinTerminalSizeWarning
 	ov                     *ui.Overlay
@@ -41,7 +41,7 @@ type focusable interface {
 
 func NewDeleteTagsPopup(
 	rc *registryclient.RegistryClient,
-	back *RegistryDetailsScreenModel,
+	back *TagListScreenModel,
 	status *ui.Status,
 	repositoryName string,
 	tagNames []string,

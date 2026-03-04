@@ -1,4 +1,4 @@
-package registrydetails
+package repositorylist
 
 import (
 	"context"
@@ -14,7 +14,7 @@ type repositoryListResult struct {
 	err            error
 }
 
-func (m *RegistryDetailsScreenModel) fetchRepositoryList() tea.Cmd {
+func (m *RepositoryListScreenModel) fetchRepositoryList() tea.Cmd {
 	return func() tea.Msg {
 		ctx := context.Background()
 
@@ -30,19 +30,6 @@ func (m *RegistryDetailsScreenModel) fetchRepositoryList() tea.Cmd {
 type tagListResult struct {
 	tagList []string
 	err     error
-}
-
-func (m *RegistryDetailsScreenModel) fetchTagList() tea.Cmd {
-	return func() tea.Msg {
-		ctx := context.Background()
-
-		tagList, err := m.rc.ListTags(ctx, *m.selectedRepository)
-
-		return tagListResult{
-			tagList: tagList.Tags,
-			err:     err,
-		}
-	}
 }
 
 func (m *DeleteTagsPopup) fetchTagList() tea.Cmd {

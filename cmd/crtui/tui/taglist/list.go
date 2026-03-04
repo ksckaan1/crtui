@@ -1,8 +1,9 @@
-package registrydetails
+package taglist
 
 import (
 	"fmt"
 	"io"
+	"slices"
 
 	"charm.land/bubbles/v2/list"
 	tea "charm.land/bubbletea/v2"
@@ -18,7 +19,9 @@ func (i *Tag) Title() string       { return i.Name }
 func (i *Tag) Description() string { return i.Name }
 func (i *Tag) FilterValue() string { return i.Name }
 
-type tagListDelegate struct{}
+type tagListDelegate struct {
+	markedTags *[]string
+}
 
 func (d *tagListDelegate) Height() int                             { return 2 }
 func (d *tagListDelegate) Spacing() int                            { return 0 }
@@ -45,5 +48,10 @@ func (d *tagListDelegate) Render(w io.Writer, m list.Model, index int, item list
 			Faint(false)
 	}
 
-	fmt.Fprint(w, itemStyle.Render(r.Name))
+	name := r.Name
+	if d.markedTags != nil && slices.Contains(*d.markedTags, r.Name) {
+		name = fmt.Sprintf("● %s", r.Name)
+	}
+
+	fmt.Fprint(w, itemStyle.Render(name))
 }

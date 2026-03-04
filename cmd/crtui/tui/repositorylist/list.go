@@ -1,4 +1,4 @@
-package registrydetails
+package repositorylist
 
 import (
 	"fmt"

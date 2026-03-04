@@ -11,7 +11,7 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/ksckaan1/crtui/cmd/crtui/tui/figlet"
 	"github.com/ksckaan1/crtui/cmd/crtui/tui/nav"
-	"github.com/ksckaan1/crtui/cmd/crtui/tui/registrydetails"
+	"github.com/ksckaan1/crtui/cmd/crtui/tui/repositorylist"
 	"github.com/ksckaan1/crtui/cmd/crtui/tui/ui"
 	"github.com/ksckaan1/crtui/config"
 	"github.com/ksckaan1/crtui/internal/core/enums/registrystatus"
@@ -154,8 +154,8 @@ func (m *RegistryListScreenModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			reg := m.registries[m.list.GlobalIndex()]
 			m.status.SetStatus(ui.Empty, "")
 			return nav.Navigate(
-				registrydetails.NewRegistryDetailsScreenModel(
-					&registrydetails.Registry{
+				repositorylist.NewRepositoryListScreenModel(
+					&repositorylist.Registry{
 						URL:            reg.URL,
 						Username:       reg.Username,
 						Password:       reg.Password,

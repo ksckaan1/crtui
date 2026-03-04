@@ -1,25 +1,29 @@
-package registrydetails
+package taglist
 
 import "charm.land/bubbles/v2/key"
 
 type keyMapT struct {
-	Navigate   key.Binding
-	SelectItem key.Binding
-	Refresh    key.Binding
-	Filter     key.Binding
-	SwitchPane key.Binding
-	Delete     key.Binding
-	Esc        key.Binding
-	Quit       key.Binding
+	Navigate key.Binding
+	Select   key.Binding
+	Mark     key.Binding
+	Refresh  key.Binding
+	Filter   key.Binding
+	Delete   key.Binding
+	Esc      key.Binding
+	Quit     key.Binding
 }
 
 var keyMap = keyMapT{
 	Navigate: key.NewBinding(
 		key.WithHelp("↑ ↓", "Navigate"),
 	),
-	SelectItem: key.NewBinding(
+	Select: key.NewBinding(
 		key.WithKeys("enter"),
-		key.WithHelp("enter", "Select item"),
+		key.WithHelp("enter", "Select"),
+	),
+	Mark: key.NewBinding(
+		key.WithKeys("space"),
+		key.WithHelp("space", "Mark Tag"),
 	),
 	Refresh: key.NewBinding(
 		key.WithKeys("r"),
@@ -29,13 +33,9 @@ var keyMap = keyMapT{
 		key.WithKeys("/"),
 		key.WithHelp("/", "Filter"),
 	),
-	SwitchPane: key.NewBinding(
-		key.WithKeys("tab"),
-		key.WithHelp("tab", "Switch pane"),
-	),
 	Delete: key.NewBinding(
 		key.WithKeys("ctrl+d"),
-		key.WithHelp("ctrl+d", "Delete repo/tags"),
+		key.WithHelp("ctrl+d", "Delete"),
 	),
 	Esc: key.NewBinding(
 		key.WithKeys("esc"),
