@@ -61,7 +61,7 @@ The application will automatically detect any existing Docker or Podman credenti
 brew install ksckaan1/tap/crtui
 ```
 
-### Debian
+### Debian (Ubuntu, Linux Mint...)
 1. Add repository
 	```bash
 	curl -1sLf \
@@ -103,7 +103,7 @@ brew install ksckaan1/tap/crtui
 sudo apk add crtui
 ```
 
-### AUR (Arch Linux)
+### AUR (Arch Linux, CachyOS, Manjaro)
 ```bash
 yay -S crtui-bin
 ```
