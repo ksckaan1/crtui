@@ -36,6 +36,7 @@ aurs:
       - default
     git_url: "ssh://aur@aur.archlinux.org/crtui-bin.git"
     private_key: "{{ .Env.AUR_SSH_KEY }}"
+    license: "MIT"
 
 checksum:
   name_template: "checksums.txt"
