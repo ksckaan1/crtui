@@ -29,6 +29,11 @@ jobs:
         with:
           go-version: '1.26'
 
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.AUR_SSH_KEY }}
+
       - name: Run GoReleaser
         if: github.event_name != 'workflow_dispatch'
         uses: goreleaser/goreleaser-action@v6
