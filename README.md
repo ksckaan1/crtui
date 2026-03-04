@@ -48,6 +48,51 @@ crtui
 
 The application will automatically detect any existing Docker or Podman credentials and display them in the registry list.
 
+## Installation
+
+### Homebrew (macOS/Linux)
+```bash
+brew install ksckaan1/tap/crtui
+```
+
+### AUR (Arch Linux)
+```bash
+yay -S crtui-bin
+```
+
+### Go Install
+```bash
+go install github.com/ksckaan1/crtui/cmd/crtui@latest
+```
+
+Make sure `$HOME/go/bin` (or `$GOPATH/bin`) is in your PATH.
+
+### Debian/Ubuntu (.deb)
+```bash
+sudo dpkg -i crtui_<version>_linux_amd64.deb
+# or
+sudo apt install ./crtui_<version>_linux_amd64.deb
+```
+
+### Fedora/RHEL (.rpm)
+```bash
+sudo rpm -i crtui-<version>-1.x86_64.rpm
+# or
+sudo dnf install ./crtui-<version>-1.x86_64.rpm
+```
+
+### Direct Download
+Download from [Releases](https://github.com/ksckaan1/crtui/releases):
+- **Linux**: `.tar.gz` (amd64, arm64)
+- **macOS**: `.tar.gz` (amd64, arm64)
+- **Windows**: `.zip` (amd64, arm64)
+
+Extract and run:
+```bash
+tar -xzf crtui_<version>_linux_amd64.tar.gz
+./crtui
+```
+
 ## Build From Source
 
 ### Prerequisites
@@ -60,14 +105,6 @@ git clone https://github.com/ksckaan1/crtui.git
 cd crtui
 go build -o crtui ./cmd/crtui
 ```
-
-### Install
-
-```bash
-go install ./cmd/crtui
-```
-
-Make sure `$HOME/go/bin` (or `$GOPATH/bin`) is in your PATH.
 
 ## License
 
