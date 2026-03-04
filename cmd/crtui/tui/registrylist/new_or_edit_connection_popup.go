@@ -87,6 +87,7 @@ func NewNewOrEditConnectionPopup(
 	testBtn.SetNormalColors(lipgloss.White, lipgloss.Color("#444444"))
 
 	if registry != nil {
+		ncw.SetLeftTitle("Edit Connection")
 		crURLti.SetValue(registry.URL)
 		usernameti.SetValue(registry.Username)
 		passwordti.SetValue(registry.Password)
