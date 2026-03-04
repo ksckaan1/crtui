@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -8,9 +9,18 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"github.com/ksckaan1/crtui/cmd/crtui/tui/registrylist"
 	"github.com/ksckaan1/crtui/config"
+	"github.com/ksckaan1/crtui/version"
 )
 
 func main() {
+	versionFlag := flag.Bool("version", false, "Show version")
+	flag.Parse()
+
+	if *versionFlag {
+		fmt.Println(version.Version)
+		os.Exit(0)
+	}
+
 	cfg, err := config.New(false, true)
 	if err != nil {
 		fmt.Println(err)
