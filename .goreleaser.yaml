@@ -63,4 +63,4 @@ builds:
       - CGO_ENABLED=0
     ldflags:
       - -s -w
-      - -X github.com/ksckaan1/crtui/version.Version=v{{.Version}}
+      - -X github.com/ksckaan1/crtui/version.Version={{.Version}}
