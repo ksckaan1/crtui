@@ -5,4 +5,10 @@ import (
 	"time"
 )
 
-var Version = fmt.Sprintf("dev-%s", time.Now().Format(time.DateOnly))
+var Version = ""
+
+func init() {
+	if Version == "" {
+		Version = fmt.Sprintf("dev-%s", time.Now().Format(time.DateOnly))
+	}
+}

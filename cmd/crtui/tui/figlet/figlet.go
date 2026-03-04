@@ -11,12 +11,6 @@ import (
 
 var Figlet = lipgloss.NewStyle().Foreground(ui.PrimaryColor).Faint(false).Render(FigletText)
 
-// const FigletText = `  ____ ____ _____ _   _ ___
-// / ____|  _ \_   _| | | |_ _|
-// | |   | |_) || | | | | || |
-// | |___|  _ < | | | |_| || |
-// \_____|_| \_\|_|  \___/|___|`
-
 const figletText = ` %s╭─╮
 ╭────╮╭────╮╭─╮  ╭─╮╭─╮├─┤
 │ ╭──╯│ ╭─┬┴╯ ╰─╮│ ││ ││ │
@@ -26,8 +20,14 @@ const figletText = ` %s╭─╮
 
 var FigletText = func() string {
 	spaceWidth := 22
-	versionWidth := len(version.Version)
+	versionText := version.Version
+	versionWidth := len(versionText)
+
+	if versionWidth > spaceWidth {
+		versionText = versionText[:spaceWidth]
+	}
+
 	padding := spaceWidth - versionWidth
 
-	return fmt.Sprintf(figletText, version.Version+strings.Repeat(" ", padding))
+	return fmt.Sprintf(figletText, versionText+strings.Repeat(" ", padding))
 }()
