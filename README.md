@@ -67,6 +67,19 @@ brew install ksckaan1/tap/crtui
 yay -S crtui-bin
 ```
 
+### Cloudsmith
+```bash
+# Debian/Ubuntu
+curl -1sLf 'https://dl.cloudsmith.io/public/ksckaan1/crtui/gpg.deb' | sudo gpg --dearmor -o /usr/share/keyrings/ksckaan1-crtui.gpg
+echo 'deb [signed-by=/usr/share/keyrings/ksckaan1-crtui.gpg] https://dl.cloudsmith.io/public/ksckaan1/crtui/any-any any main' | sudo tee /etc/apt/sources.list.d/ksckaan1-crtui.list
+sudo apt update
+sudo apt install crtui
+
+# Fedora/RHEL
+sudo dnf config-manager --add-repo https://dl.cloudsmith.io/public/ksckaan1/crtui/any-arch.repo
+sudo dnf install crtui
+```
+
 ### Alpine Linux (.apk)
 ```bash
 apk add crtui-<version>.apk

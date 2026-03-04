@@ -58,6 +58,11 @@ release:
     name: crtui
   draft: false
   prerelease: auto
+  after_deploy:
+    - script: bash
+      name: upload_to_cloudsmith
+      timeout: 2m
+      cmd: bash scripts/upload_cloudsmith.sh
 
 builds:
   - id: crtui
