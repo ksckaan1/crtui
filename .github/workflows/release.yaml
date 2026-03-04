@@ -29,17 +29,6 @@ jobs:
         with:
           go-version: '1.26'
 
-      - name: Set up SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.AUR_SSH_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H -p 22 aur.archlinux.org >> ~/.ssh/known_hosts 2>/dev/null
-          ssh-keyscan -H -p 22 gitlab.archlinux.org >> ~/.ssh/known_hosts 2>/dev/null
-          echo "Host aur.archlinux.org" >> ~/.ssh/config
-          echo "    HostKeyAlgorithms +ssh-rsa" >> ~/.ssh/config
-          echo "    PubkeyAcceptedAlgorithms +ssh-rsa" >> ~/.ssh/config
-
       - name: Run GoReleaser
         if: github.event_name != 'workflow_dispatch'
         uses: goreleaser/goreleaser-action@v6
@@ -49,6 +38,7 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.HOMEBREW_GITHUB_TOKEN }}
+          AUR_SSH_KEY: ${{ secrets.AUR_SSH_KEY }}
 
       - name: Run GoReleaser (Snapshot)
         if: github.event_name == 'workflow_dispatch'
@@ -59,3 +49,4 @@ jobs:
           args: release --snapshot --clean
         env:
           GITHUB_TOKEN: ${{ secrets.HOMEBREW_GITHUB_TOKEN }}
+          AUR_SSH_KEY: ${{ secrets.AUR_SSH_KEY }}
