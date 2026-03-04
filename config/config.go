@@ -84,6 +84,15 @@ func (c *Config) ListAuths() ([]*Auth, error) {
 				err      error
 			)
 
+			if authData.Username == "" {
+				results = append(results, &Auth{
+					URL:      url,
+					Username: "",
+					Password: "",
+				})
+				continue
+			}
+
 			if authData.Password == "" && c.isKeyringEnabled {
 				password, err = keyring.Get("crtui", fmt.Sprintf("%s@%s", authData.Username, url))
 				if err != nil {
@@ -134,6 +143,12 @@ func (c *Config) GetAuth(url, username string) (*Auth, error) {
 	})
 	if !ok {
 		return nil, fmt.Errorf("username not found")
+	}
+
+	if foundAuth.Username == "" {
+		return &Auth{
+			URL: url,
+		}, nil
 	}
 
 	var (
