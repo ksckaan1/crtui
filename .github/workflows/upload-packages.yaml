@@ -33,15 +33,16 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # Create the dist directory
           mkdir -p dist
 
           if [ "${{ github.event.inputs.release_tag }}" == "latest" ]; then
-            echo "Downloading assets from the latest release..."
-            gh release download --repo ${{ github.repository }} --dir dist
+            echo "Downloading all assets from the latest release..."
+            # Added --pattern '*' to select all files
+            gh release download --repo ${{ github.repository }} --dir dist --pattern '*'
           else
-            echo "Downloading assets from tag: ${{ github.event.inputs.release_tag }}..."
-            gh release download ${{ github.event.inputs.release_tag }} --repo ${{ github.repository }} --dir dist
+            echo "Downloading all assets from tag: ${{ github.event.inputs.release_tag }}..."
+            # Added --pattern '*' here as well for consistency
+            gh release download ${{ github.event.inputs.release_tag }} --repo ${{ github.repository }} --dir dist --pattern '*'
           fi
 
       - name: Make Script Executable
@@ -50,6 +51,5 @@ jobs:
       - name: Run Cloudsmith Upload Script
         env:
           CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
-          # Providing the directory path to your bash script via env var
           RELEASE_ASSETS_DIR: ./dist
         run: ./scripts/upload_cloudsmith.sh
