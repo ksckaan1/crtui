@@ -1,8 +1,8 @@
 #!/bin/bash
 set -e
 
-if [ -z "$CLOUDSMITH_TOKEN" ]; then
-    echo "CLOUDSMITH_TOKEN is not set. Skipping Cloudsmith upload."
+if [ -z "$CLOUDSMITH_API_KEY" ]; then
+    echo "CLOUDSMITH_API_KEY is not set. Skipping Cloudsmith upload."
     exit 0
 fi
 
