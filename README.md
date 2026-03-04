@@ -49,7 +49,6 @@ A terminal-based TUI tool for managing container registries (`registry:2`). Supp
 ## Quick Start
 
 ```bash
-# Run the application
 crtui
 ```
 
@@ -62,27 +61,51 @@ The application will automatically detect any existing Docker or Podman credenti
 brew install ksckaan1/tap/crtui
 ```
 
+### Debian
+1. Add repository
+	```bash
+	curl -1sLf \
+	  'https://dl.cloudsmith.io/public/ksckaan1/crtui/setup.deb.sh' \
+	  | sudo -E bash
+	```
+
+2. Install package
+	```bash
+	sudo apt update
+	sudo apt install crtui
+	```
+
+### Fedora/RHEL
+1. Add repository
+	```bash
+	curl -1sLf \
+	  'https://dl.cloudsmith.io/public/ksckaan1/crtui/setup.rpm.sh' \
+	  | sudo -E bash
+	```
+
+2. Install package
+	```bash
+	sudo dnf update
+	sudo dnf install crtui
+	```
+
+### Alpine (apk)
+1. Add repository
+	```bash
+	sudo apk add --no-cache bash
+	curl -1sLf \
+	  'https://dl.cloudsmith.io/public/ksckaan1/crtui/setup.alpine.sh' \
+	  | sudo -E bash
+	```
+
+2. Install package
+```bash
+sudo apk add crtui
+```
+
 ### AUR (Arch Linux)
 ```bash
 yay -S crtui-bin
-```
-
-### Cloudsmith
-```bash
-# Debian/Ubuntu
-curl -1sLf 'https://dl.cloudsmith.io/public/ksckaan1/crtui/gpg.deb' | sudo gpg --dearmor -o /usr/share/keyrings/ksckaan1-crtui.gpg
-echo 'deb [signed-by=/usr/share/keyrings/ksckaan1-crtui.gpg] https://dl.cloudsmith.io/public/ksckaan1/crtui/any-any any main' | sudo tee /etc/apt/sources.list.d/ksckaan1-crtui.list
-sudo apt update
-sudo apt install crtui
-
-# Fedora/RHEL
-sudo dnf config-manager --add-repo https://dl.cloudsmith.io/public/ksckaan1/crtui/any-arch.repo
-sudo dnf install crtui
-```
-
-### Alpine Linux (.apk)
-```bash
-apk add crtui-<version>.apk
 ```
 
 ### Go Install
@@ -92,29 +115,15 @@ go install github.com/ksckaan1/crtui/cmd/crtui@latest
 
 Make sure `$HOME/go/bin` (or `$GOPATH/bin`) is in your PATH.
 
-### Debian/Ubuntu (.deb)
-```bash
-sudo dpkg -i crtui_<version>_linux_amd64.deb
-# or
-sudo apt install ./crtui_<version>_linux_amd64.deb
-```
-
-### Fedora/RHEL (.rpm)
-```bash
-sudo rpm -i crtui-<version>-1.x86_64.rpm
-# or
-sudo dnf install ./crtui-<version>-1.x86_64.rpm
-```
-
-### Direct Download
+### Direct Download Prebuilt Binary
 Download from [Releases](https://github.com/ksckaan1/crtui/releases):
-- **Linux**: `.tar.gz` (amd64, arm64), `.apk` (Alpine)
+- **Linux**: `.tar.gz` (amd64, arm64)
 - **macOS**: `.tar.gz` (amd64, arm64)
 - **Windows**: `.zip` (amd64, arm64)
 
 Extract and run:
 ```bash
-tar -xzf crtui_<version>_linux_amd64.tar.gz
+tar -xzf crtui_*.tar.gz
 ./crtui
 ```
 
