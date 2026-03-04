@@ -4,42 +4,21 @@ project_name: crtui
 
 archives:
   - id: default
-    formats:
-      - tar.gz
+    formats: [tar.gz]
     format_overrides:
       - goos: windows
-        formats:
-          - zip
+        formats: [zip]
     files:
       - LICENSE
 
 nfpms:
   - id: default
-    formats:
-      - deb
-      - rpm
-      - apk
+    formats: [deb, rpm, apk]
     vendor: crtui
     homepage: https://github.com/ksckaan1/crtui
     maintainer: Kaan Kuscu
     description: Terminal-based container registry management tool
     license: MIT
-
-brews:
-  - name: crtui
-    repository:
-      owner: ksckaan1
-      name: homebrew-tap
-
-aurs:
-  - name: crtui-bin
-    ids:
-      - default
-    git_url: "ssh://aur@aur.archlinux.org/crtui-bin.git"
-    private_key: "{{ .Env.AUR_SSH_KEY }}"
-    license: "MIT"
-    description: "Terminal-based container registry management tool"
-    homepage: "https://kaanksc.com"
 
 checksum:
   name_template: "checksums.txt"
@@ -52,16 +31,16 @@ changelog:
       - "^test:"
       - "^chore:"
 
-after:
-  hooks:
-    - script: bash
-      name: upload_to_cloudsmith
-      timeout: 2m
-      cmd: bash scripts/upload_cloudsmith.sh
-
 release:
-  - id: crtui
-    main: ./cmd/crtui
+  github:
+    owner: ksckaan1
+    name: crtui
+  draft: false
+  prerelease: auto
+
+builds:
+  - main: ./cmd/crtui
+    binary: crtui
     goos:
       - linux
       - darwin
@@ -69,7 +48,6 @@ release:
     goarch:
       - amd64
       - arm64
-    binary: crtui
     env:
       - CGO_ENABLED=0
     ldflags:

@@ -37,8 +37,25 @@ jobs:
           version: '~> v2'
           args: release --clean
         env:
-          GITHUB_TOKEN: ${{ secrets.HOMEBREW_GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           AUR_SSH_KEY: ${{ secrets.AUR_SSH_KEY }}
+
+      - name: Upload to Cloudsmith
+        if: github.event_name != 'workflow_dispatch' && env.CLOUDSMITH_TOKEN != ''
+        run: |
+          pip install --quiet cloudsmith-cli
+          ORG="ksckaan1"
+          REPO="crtui"
+          for deb in dist/*.deb; do
+            [ -f "$deb" ] && cloudsmith push deb "$ORG/$REPO/ubuntu/any-version" "$deb" --no-wait-for-sync || true
+          done
+          for rpm in dist/*.rpm; do
+            [ -f "$rpm" ] && cloudsmith push rpm "$ORG/$REPO/any-distro/any-version" "$rpm" --no-wait-for-sync || true
+          done
+          for apk in dist/*.apk; do
+            [ -f "$apk" ] && cloudsmith push alpine "$ORG/$REPO/alpine/edge" "$apk" --no-wait-for-sync || true
+          done
+        env:
           CLOUDSMITH_TOKEN: ${{ secrets.CLOUDSMITH_TOKEN }}
 
       - name: Run GoReleaser (Snapshot)
@@ -49,6 +66,23 @@ jobs:
           version: '~> v2'
           args: release --snapshot --clean
         env:
-          GITHUB_TOKEN: ${{ secrets.HOMEBREW_GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           AUR_SSH_KEY: ${{ secrets.AUR_SSH_KEY }}
+
+      - name: Upload to Cloudsmith (Snapshot)
+        if: github.event_name == 'workflow_dispatch' && env.CLOUDSMITH_TOKEN != ''
+        run: |
+          pip install --quiet cloudsmith-cli
+          ORG="ksckaan1"
+          REPO="crtui"
+          for deb in dist/*.deb; do
+            [ -f "$deb" ] && cloudsmith push deb "$ORG/$REPO/ubuntu/any-version" "$deb" --no-wait-for-sync || true
+          done
+          for rpm in dist/*.rpm; do
+            [ -f "$rpm" ] && cloudsmith push rpm "$ORG/$REPO/any-distro/any-version" "$rpm" --no-wait-for-sync || true
+          done
+          for apk in dist/*.apk; do
+            [ -f "$apk" ] && cloudsmith push alpine "$ORG/$REPO/alpine/edge" "$apk" --no-wait-for-sync || true
+          done
+        env:
           CLOUDSMITH_TOKEN: ${{ secrets.CLOUDSMITH_TOKEN }}
