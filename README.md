@@ -48,6 +48,27 @@ crtui
 
 The application will automatically detect any existing Docker credentials and display them in the registry list.
 
+## Build From Source
+
+### Prerequisites
+- Go 1.26+
+
+### Build
+
+```bash
+git clone https://github.com/ksckaan1/crtui.git
+cd crtui
+go build -o crtui ./cmd/crtui
+```
+
+### Install
+
+```bash
+go install ./cmd/crtui
+```
+
+Make sure `$HOME/go/bin` (or `$GOPATH/bin`) is in your PATH.
+
 ## License
 
 MIT License
