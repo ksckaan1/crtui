@@ -1,7 +1,6 @@
 package figlet
 
 import (
-	"fmt"
 	"strings"
 
 	"charm.land/lipgloss/v2"
@@ -11,7 +10,7 @@ import (
 
 var Figlet = lipgloss.NewStyle().Foreground(ui.PrimaryColor).Faint(false).Render(FigletText)
 
-const figletText = ` %s╭─╮
+const figletText = `                       ╭─╮
 ╭────╮╭────╮╭─╮  ╭─╮╭─╮├─┤
 │ ╭──╯│ ╭─┬┴╯ ╰─╮│ ││ ││ │
 │ │   │ │ ╰─╮ ╭─╯│ ││ ││ │
@@ -19,15 +18,63 @@ const figletText = ` %s╭─╮
 ╰────╯╰─╯   ╰───╯╰────╯╰─╯`
 
 var FigletText = func() string {
-	spaceWidth := 22
-	versionText := version.Version
-	versionWidth := len(versionText)
+	versionText := lipgloss.NewStyle().
+		Foreground(lipgloss.Black).
+		Background(lipgloss.Color("#444444")).
+		Padding(0, 1).
+		Bold(true).
+		Render(version.Version)
 
-	if versionWidth > spaceWidth {
-		versionText = versionText[:spaceWidth]
+	backLines := strings.Split(figletText, "\n")
+
+	backHeight := len(backLines)
+	backWidth := 0
+	for _, l := range backLines {
+		if w := lipgloss.Width(l); w > backWidth {
+			backWidth = w
+		}
 	}
 
-	padding := spaceWidth - versionWidth
+	frontLines := strings.Split(versionText, "\n")
+	frontHeight := len(frontLines)
 
-	return fmt.Sprintf(figletText, versionText+strings.Repeat(" ", padding))
+	frontWidth := 0
+	for _, l := range frontLines {
+		if w := lipgloss.Width(l); w > frontWidth {
+			frontWidth = w
+		}
+	}
+
+	startY := max(backHeight-frontHeight, 0)
+
+	startX := max(backWidth-frontWidth, 0)
+
+	var finalView strings.Builder
+	for y, line := range backLines {
+		if y >= startY && y < startY+frontHeight {
+			fLineIdx := y - startY
+			fLine := frontLines[fLineIdx]
+
+			runes := []rune(line)
+			totalRunes := len(runes)
+
+			leftPart := ""
+			if startX > 0 {
+				end := min(startX, totalRunes)
+				leftPart = string(runes[:end])
+			}
+
+			rightPart := ""
+			rightStart := startX + lipgloss.Width(fLine)
+			if rightStart < totalRunes {
+				rightPart = string(runes[rightStart:])
+			}
+
+			finalView.WriteString(leftPart + fLine + rightPart + "\n")
+		} else {
+			finalView.WriteString(line + "\n")
+		}
+	}
+
+	return strings.TrimSuffix(finalView.String(), "\n")
 }()
