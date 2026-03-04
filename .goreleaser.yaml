@@ -35,9 +35,6 @@ aurs:
     ids:
       - crtui
     git_url: "ssh://aur@aur.archlinux.org/crtui-bin.git"
-    arch:
-      - amd64
-      - arm64
 
 checksum:
   name_template: "checksums.txt"
