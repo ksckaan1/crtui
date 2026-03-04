@@ -37,6 +37,8 @@ aurs:
     git_url: "ssh://aur@aur.archlinux.org/crtui-bin.git"
     private_key: "{{ .Env.AUR_SSH_KEY }}"
     license: "MIT"
+    description: "Terminal-based container registry management tool"
+    homepage: "https://kaanksc.com"
 
 checksum:
   name_template: "checksums.txt"
