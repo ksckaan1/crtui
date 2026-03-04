@@ -1,6 +1,6 @@
 # crtui
 
-A terminal-based TUI tool for managing container registries (`registry:2`).
+A terminal-based TUI tool for managing container registries (`registry:2`). Supports both Docker and Podman credentials.
 
 ## Features
 
@@ -9,7 +9,7 @@ A terminal-based TUI tool for managing container registries (`registry:2`).
 - **Add Registry**: Create new registry connections with custom URL, username, and password credentials
 - **Edit Registry**: Modify existing registry connection details
 - **Delete Registry**: Remove registry connections from the configuration
-- **Auto-detect Credentials**: Automatically discover and use Docker credentials from `~/.docker/config.json`
+- **Auto-detect Credentials**: Automatically discover and use Docker/Podman credentials from config files
 - **HTTP/3 Support**: Connect to registries using QUIC/HTTP3 protocol for improved performance
 
 ### 📂 Repository & Tag Management
@@ -46,7 +46,7 @@ A terminal-based TUI tool for managing container registries (`registry:2`).
 crtui
 ```
 
-The application will automatically detect any existing Docker credentials and display them in the registry list.
+The application will automatically detect any existing Docker or Podman credentials and display them in the registry list.
 
 ## Build From Source
 
