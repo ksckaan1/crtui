@@ -150,7 +150,9 @@ func (m *RegistryListScreenModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// SELECT REGISTRY
 		case key.Matches(msg, keyMap.SelectRegistry) &&
 			!m.isTyping() &&
+			len(m.registries) != 0 &&
 			m.registries[m.list.GlobalIndex()].Status == registrystatus.Online:
+
 			reg := m.registries[m.list.GlobalIndex()]
 			m.status.SetStatus(ui.Empty, "")
 			return nav.Navigate(
@@ -272,6 +274,10 @@ func (m *RegistryListScreenModel) View() tea.View {
 	m.registryListWindow.SetLeftTitle(leftTitle)
 
 	m.registryListWindow.SetContent(func(width, height int) string {
+		if len(m.registries) == 0 {
+			return "No registries found"
+		}
+
 		m.list.SetWidth(width)
 		m.list.SetHeight(height)
 

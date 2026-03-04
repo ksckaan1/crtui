@@ -1,4 +1,11 @@
-# crtui
+```
+                       ╭─╮
+╭────╮╭────╮╭─╮  ╭─╮╭─╮├─┤
+│ ╭──╯│ ╭─┬┴╯ ╰─╮│ ││ ││ │
+│ │   │ │ ╰─╮ ╭─╯│ ││ ││ │
+│ ╰──╮│ │   │ ╰─╮│ ╰╯ ││ │
+╰────╯╰─╯   ╰───╯╰────╯╰─╯
+```
 
 A terminal-based TUI tool for managing container registries (`registry:2`). Supports both Docker and Podman credentials.
 
