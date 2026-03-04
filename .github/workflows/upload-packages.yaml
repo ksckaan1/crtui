@@ -1,11 +1,19 @@
-name: Upload Packages
+name: Upload Release Assets to Cloudsmith
 
 on:
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release Tag to download (Leave empty for "latest")'
+        required: false
+        default: "latest"
 
 jobs:
   upload:
+    name: Cloudsmith Asset Upload
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout Repository
@@ -14,12 +22,27 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.x" # En güncel kararlı Python sürümünü kullanır
+          python-version: "3.x"
 
       - name: Install Cloudsmith CLI
         run: |
           python -m pip install --upgrade pip
           pip install --quiet cloudsmith-cli
+
+      - name: Download Release Assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Create the dist directory
+          mkdir -p dist
+
+          if [ "${{ github.event.inputs.release_tag }}" == "latest" ]; then
+            echo "Downloading assets from the latest release..."
+            gh release download --repo ${{ github.repository }} --dir dist
+          else
+            echo "Downloading assets from tag: ${{ github.event.inputs.release_tag }}..."
+            gh release download ${{ github.event.inputs.release_tag }} --repo ${{ github.repository }} --dir dist
+          fi
 
       - name: Make Script Executable
         run: chmod +x scripts/upload_cloudsmith.sh
@@ -27,4 +50,6 @@ jobs:
       - name: Run Cloudsmith Upload Script
         env:
           CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
+          # Providing the directory path to your bash script via env var
+          RELEASE_ASSETS_DIR: ./dist
         run: ./scripts/upload_cloudsmith.sh
