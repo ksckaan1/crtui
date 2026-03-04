@@ -33,7 +33,7 @@ brews:
 aurs:
   - name: crtui-bin
     ids:
-      - crtui
+      - default
     git_url: "ssh://aur@aur.archlinux.org/crtui-bin.git"
 
 checksum:
