@@ -13,10 +13,11 @@ import (
 )
 
 func main() {
-	versionFlag := flag.Bool("version", false, "Show version")
+	showVersion := flag.Bool("version", false, "Show version")
+	v := flag.Bool("v", false, "Show version")
 	flag.Parse()
 
-	if *versionFlag {
+	if *showVersion || *v {
 		fmt.Println(version.Version)
 		os.Exit(0)
 	}
