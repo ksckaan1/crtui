@@ -30,12 +30,11 @@ jobs:
           go-version: '1.26'
 
       - name: Set up SSH
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.AUR_SSH_KEY }}
-          ssh-known-hosts: |
-            aur.archlinux.org
-            github.com
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.AUR_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H aur.archlinux.org >> ~/.ssh/known_hosts
 
       - name: Run GoReleaser
         if: github.event_name != 'workflow_dispatch'
