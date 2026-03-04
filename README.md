@@ -67,6 +67,11 @@ brew install ksckaan1/tap/crtui
 yay -S crtui-bin
 ```
 
+### Alpine Linux (.apk)
+```bash
+apk add crtui-<version>.apk
+```
+
 ### Go Install
 ```bash
 go install github.com/ksckaan1/crtui/cmd/crtui@latest
@@ -90,7 +95,7 @@ sudo dnf install ./crtui-<version>-1.x86_64.rpm
 
 ### Direct Download
 Download from [Releases](https://github.com/ksckaan1/crtui/releases):
-- **Linux**: `.tar.gz` (amd64, arm64)
+- **Linux**: `.tar.gz` (amd64, arm64), `.apk` (Alpine)
 - **macOS**: `.tar.gz` (amd64, arm64)
 - **Windows**: `.zip` (amd64, arm64)
 

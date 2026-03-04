@@ -150,22 +150,36 @@ func (m *RegistryListScreenModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// SELECT REGISTRY
 		case key.Matches(msg, keyMap.SelectRegistry) &&
 			!m.isTyping() &&
-			len(m.registries) != 0 &&
-			m.registries[m.list.GlobalIndex()].Status == registrystatus.Online:
+			len(m.registries) != 0:
 
 			reg := m.registries[m.list.GlobalIndex()]
-			m.status.SetStatus(ui.Empty, "")
-			return nav.Navigate(
-				repositorylist.NewRepositoryListScreenModel(
-					&repositorylist.Registry{
-						URL:            reg.URL,
-						Username:       reg.Username,
-						Password:       reg.Password,
-						SupportsHTTPS3: reg.SupportsHTTP3,
-					},
-					m,
-					m.status,
-				))
+
+			if reg.Status == registrystatus.Unauth {
+				return m, m.status.SetStatus(ui.Error, "Authentication failed")
+			}
+
+			if reg.Status == registrystatus.Offline {
+				return m, m.status.SetStatus(ui.Error, "Registry offline")
+			}
+
+			if reg.Status == registrystatus.Invalid {
+				return m, m.status.SetStatus(ui.Error, "Registry invalid")
+			}
+
+			if reg.Status == registrystatus.Online {
+				m.status.SetStatus(ui.Empty, "")
+				return nav.Navigate(
+					repositorylist.NewRepositoryListScreenModel(
+						&repositorylist.Registry{
+							URL:            reg.URL,
+							Username:       reg.Username,
+							Password:       reg.Password,
+							SupportsHTTPS3: reg.SupportsHTTP3,
+						},
+						m,
+						m.status,
+					))
+			}
 
 		// REFRESH REGISTRY LIST
 		case key.Matches(msg, keyMap.Refresh) &&

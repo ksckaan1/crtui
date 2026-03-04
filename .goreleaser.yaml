@@ -18,6 +18,7 @@ nfpms:
     formats:
       - deb
       - rpm
+      - apk
     vendor: crtui
     homepage: https://github.com/ksckaan1/crtui
     maintainer: Kaan Kuscu
