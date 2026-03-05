@@ -65,8 +65,8 @@ func NewNewOrEditConnectionPopup(
 		if err != nil {
 			return err
 		}
-		if u.Scheme != "https" {
-			return errors.New("only https connections are valid")
+		if !(u.Scheme == "https" || u.Scheme == "http") {
+			return errors.New("invalid scheme")
 		}
 		return err
 	}

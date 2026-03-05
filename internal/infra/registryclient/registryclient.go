@@ -31,8 +31,12 @@ type RegistryClient struct {
 
 func New(baseURL, username, password string) *RegistryClient {
 	client := resty.New().
-		SetBasicAuth(username, password).
-		SetBaseURL(baseURL)
+		SetBaseURL(baseURL).
+		SetDisableWarn(true)
+
+	if username != "" && password != "" {
+		client = client.SetBasicAuth(username, password)
+	}
 
 	return &RegistryClient{
 		client:   client,
