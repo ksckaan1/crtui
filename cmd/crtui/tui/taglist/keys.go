@@ -6,6 +6,7 @@ type keyMapT struct {
 	Navigate key.Binding
 	Select   key.Binding
 	Mark     key.Binding
+	MarkAll  key.Binding
 	Refresh  key.Binding
 	Filter   key.Binding
 	Delete   key.Binding
@@ -23,7 +24,11 @@ var keyMap = keyMapT{
 	),
 	Mark: key.NewBinding(
 		key.WithKeys("space"),
-		key.WithHelp("space", "Mark"),
+		key.WithHelp("space", "Mark/Unmark"),
+	),
+	MarkAll: key.NewBinding(
+		key.WithKeys("ctrl+a"),
+		key.WithHelp("ctrl+a", "Mark/Unmark All"),
 	),
 	Refresh: key.NewBinding(
 		key.WithKeys("r"),

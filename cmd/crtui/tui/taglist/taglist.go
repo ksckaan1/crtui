@@ -135,10 +135,15 @@ func (m *TagListScreenModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				),
 			)
 
-		// MARK TAGS
+		// MARK/UNMARK TAGS
 		case key.Matches(msg, keyMap.Mark) &&
 			m.tagListUI.FilterState() != list.Filtering:
 			m.toggleMarkedTag()
+
+		// MARK/UNMARK ALL TAGS
+		case key.Matches(msg, keyMap.MarkAll) &&
+			m.tagListUI.FilterState() != list.Filtering:
+			m.toggleAllMarkedTags()
 
 		// DELETE TAGS
 		case key.Matches(msg, keyMap.Delete) &&
@@ -331,4 +336,17 @@ func (m *TagListScreenModel) toggleMarkedTag() {
 	} else {
 		*m.markedTags = append(*m.markedTags, targetTag)
 	}
+}
+
+func (m *TagListScreenModel) toggleAllMarkedTags() {
+	if len(m.tagList) == 0 {
+		return
+	}
+
+	if len(*m.markedTags) > 0 {
+		*m.markedTags = []*Tag{}
+		return
+	}
+
+	*m.markedTags = append(*m.markedTags, m.tagList...)
 }
