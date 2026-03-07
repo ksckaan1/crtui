@@ -1,12 +1,16 @@
 package repositorylist
 
 import (
+	"errors"
+	"net/http"
+
 	"charm.land/bubbles/v2/spinner"
 	"charm.land/bubbles/v2/viewport"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/ksckaan1/crtui/cmd/crtui/tui/nav"
 	"github.com/ksckaan1/crtui/cmd/crtui/tui/ui"
+	"github.com/ksckaan1/crtui/internal/core/customerrors"
 	"github.com/ksckaan1/crtui/internal/infra/registryclient"
 	"github.com/samber/lo"
 )
@@ -47,15 +51,7 @@ func NewDeleteTagsPopup(
 	tagNames []string,
 	spinner spinner.Model,
 ) *DeleteTagsPopup {
-	leftTitle := "Delete Tag"
-
-	if len(tagNames) > 1 {
-		leftTitle = "Delete Tags"
-	}
-
-	if len(tagNames) == 0 {
-		leftTitle = "Delete Repository"
-	}
+	leftTitle := "Delete Repository Tags"
 
 	popup := ui.NewWindow()
 	popup.SetWidth(40)
@@ -165,6 +161,9 @@ func (m *DeleteTagsPopup) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case deleteTagsResult:
 		if msg.err != nil {
+			if e, ok := errors.AsType[customerrors.ErrStatusCode](msg.err); ok && e.StatusCode == http.StatusMethodNotAllowed {
+				return m, m.status.SetStatus(ui.Error, "Deleting tags not allowed for this registry")
+			}
 			return m, m.status.SetStatus(ui.Error, msg.err.Error())
 		}
 

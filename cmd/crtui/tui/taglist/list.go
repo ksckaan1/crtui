@@ -20,7 +20,7 @@ func (i *Tag) Description() string { return i.Name }
 func (i *Tag) FilterValue() string { return i.Name }
 
 type tagListDelegate struct {
-	markedTags *[]string
+	markedTags *[]*Tag
 }
 
 func (d *tagListDelegate) Height() int                             { return 2 }
@@ -49,8 +49,8 @@ func (d *tagListDelegate) Render(w io.Writer, m list.Model, index int, item list
 	}
 
 	name := r.Name
-	if d.markedTags != nil && slices.Contains(*d.markedTags, r.Name) {
-		name = fmt.Sprintf("● %s", r.Name)
+	if d.markedTags != nil && slices.ContainsFunc(*d.markedTags, func(t *Tag) bool { return t.Name == r.Name }) {
+		name = fmt.Sprintf("%s %s", lipgloss.NewStyle().Foreground(ui.PrimaryColor).Render("●"), r.Name)
 	}
 
 	fmt.Fprint(w, itemStyle.Render(name))
