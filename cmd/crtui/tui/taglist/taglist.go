@@ -282,17 +282,23 @@ func (m *TagListScreenModel) drawTags() string {
 	}
 	m.tagsWindow.SetLeftTitle(tagLeftTitle)
 
-	m.tagsWindow.SetRightTitle(
-		lo.Ternary(
-			m.isLoading,
-			m.spinner.View(),
-			ui.CountKind(
-				len(m.tagList),
-				"tag",
-				"tags",
-			),
+	rightTitle := ""
+
+	if len(*m.markedTags) > 0 {
+		rightTitle += fmt.Sprintf("(%d marked) ", len(*m.markedTags))
+	}
+
+	rightTitle += lo.Ternary(
+		m.isLoading,
+		m.spinner.View(),
+		ui.CountKind(
+			len(m.tagList),
+			"tag",
+			"tags",
 		),
 	)
+
+	m.tagsWindow.SetRightTitle(rightTitle)
 
 	m.tagsWindow.SetContent(func(width, height int) string {
 		if len(m.tagList) == 0 && m.isLoading {
