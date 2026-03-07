@@ -14,6 +14,7 @@ import (
 	"github.com/ksckaan1/crtui/config"
 	"github.com/ksckaan1/crtui/internal/core/enums/registrystatus"
 	"github.com/ksckaan1/crtui/internal/infra/registryclient"
+	"github.com/samber/lo"
 )
 
 var _ tea.Model = (*NewOrEditConnectionPopup)(nil)
@@ -82,7 +83,7 @@ func NewNewOrEditConnectionPopup(
 	passwordti.Prompt = "Insert:  "
 	passwordti.EchoMode = textinput.EchoPassword
 
-	connectBtn := ui.NewButton("Create")
+	connectBtn := ui.NewButton(lo.Ternary(registry == nil || registry.URL == "", "Create", "Save"))
 	testBtn := ui.NewButton("Test")
 	testBtn.SetNormalColors(lipgloss.White, lipgloss.Color("#444444"))
 
