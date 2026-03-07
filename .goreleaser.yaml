@@ -20,6 +20,22 @@ nfpms:
     description: Terminal-based container registry management tool
     license: MIT
 
+brews:
+  - name: crtui
+    repository:
+      owner: ksckaan1
+      name: homebrew-tap
+
+aurs:
+  - name: crtui-bin
+    ids:
+      - default
+    git_url: "ssh://aur@aur.archlinux.org/crtui-bin.git"
+    private_key: "{{ .Env.AUR_SSH_KEY }}"
+    license: "MIT"
+    description: "Terminal-based container registry management tool"
+    homepage: "https://kaanksc.com"
+
 checksum:
   name_template: "checksums.txt"
 
