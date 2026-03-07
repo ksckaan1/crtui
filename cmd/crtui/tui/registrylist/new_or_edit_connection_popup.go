@@ -101,7 +101,7 @@ func NewNewOrEditConnectionPopup(
 		status:                 status,
 		back:                   back,
 		backgroundText:         back.View().Content,
-		minTerminalSizeWarning: ui.NewMinTerminalSizeWarning(82, 24),
+		minTerminalSizeWarning: ui.NewMinTerminalSizeWarning(60, 24),
 		ov:                     ui.NewOverlay(status),
 
 		newConnectionPopup: ncw,

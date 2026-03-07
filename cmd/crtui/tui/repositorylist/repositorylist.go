@@ -88,7 +88,7 @@ func NewRepositoryListScreenModel(
 		isLoading: true,
 
 		selectedRepository:     new(""),
-		minTerminalSizeWarning: ui.NewMinTerminalSizeWarning(82, 24),
+		minTerminalSizeWarning: ui.NewMinTerminalSizeWarning(60, 24),
 		status:                 status,
 	}
 }

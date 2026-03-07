@@ -79,7 +79,7 @@ func NewTagListScreenModel(
 		tagListUI:              tagList,
 		isLoading:              true,
 		selectedRepositoryName: repositoryName,
-		minTerminalSizeWarning: ui.NewMinTerminalSizeWarning(82, 24),
+		minTerminalSizeWarning: ui.NewMinTerminalSizeWarning(60, 24),
 		status:                 status,
 	}
 }
