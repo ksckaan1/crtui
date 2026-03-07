@@ -75,7 +75,7 @@ func NewTagDetailsScreenModel(
 		pullCommand:            fmt.Sprintf("docker pull %s/%s:%s", host, repositoryName, tagName),
 		repositoryName:         repositoryName,
 		tagName:                tagName,
-		minTerminalSizeWarning: ui.NewMinTerminalSizeWarning(82, 24),
+		minTerminalSizeWarning: ui.NewMinTerminalSizeWarning(60, 24),
 
 		timeStart: time.Now(),
 	}

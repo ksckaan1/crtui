@@ -27,19 +27,6 @@ func (m *TagListScreenModel) fetchTagList() tea.Cmd {
 	}
 }
 
-func (m *DeleteTagsPopup) fetchTagList() tea.Cmd {
-	return func() tea.Msg {
-		ctx := context.Background()
-
-		tagList, err := m.rc.ListTags(ctx, m.repositoryName)
-
-		return tagListResult{
-			tagList: tagList.Tags,
-			err:     err,
-		}
-	}
-}
-
 type deleteTagsResult struct {
 	err error
 }

@@ -6,15 +6,17 @@ import (
 	"reflect"
 
 	"charm.land/bubbles/v2/key"
+	"charm.land/bubbles/v2/viewport"
 	"charm.land/lipgloss/v2"
 )
 
 var (
 	keysContainer = lipgloss.NewStyle().
+			Width(100).
 			PaddingLeft(1)
 	keysKeyStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#FFFFFF")).
-			Width(6)
+			Width(10)
 	keysDescriptionStyle = lipgloss.NewStyle().
 				Foreground(lipgloss.Color("#626262"))
 )
@@ -82,7 +84,7 @@ func (m *KeysWindow) SetKeyMap(keyMap any) {
 }
 
 func (m *KeysWindow) genContent() {
-	m.window.SetContent(func(_, height int) string {
+	m.window.SetContent(func(width, height int) string {
 		cols := make([]string, 0, int(math.Ceil(float64(len(m.keys))/float64(height))))
 
 		var col string
@@ -103,7 +105,7 @@ func (m *KeysWindow) genContent() {
 
 		keysContent := lipgloss.JoinHorizontal(lipgloss.Top, cols...)
 
-		return keysContainer.Render(keysContent)
+		return m.cropHorizontal(keysContainer.Render(keysContent), 0, width-1)
 	})
 
 	m.content = m.window.View()
@@ -111,4 +113,22 @@ func (m *KeysWindow) genContent() {
 
 func (m *KeysWindow) View() string {
 	return m.content
+}
+
+func (t *KeysWindow) cropHorizontal(s string, left, length int) string {
+	if length == 0 {
+		return ""
+	}
+
+	width := min(lipgloss.Width(s), length)
+
+	vp := viewport.New(
+		viewport.WithWidth(width),
+		viewport.WithHeight(lipgloss.Height(s)),
+	)
+
+	vp.SetContent(s)
+	vp.SetXOffset(left)
+
+	return vp.View()
 }

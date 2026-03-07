@@ -65,8 +65,8 @@ func NewNewOrEditConnectionPopup(
 		if err != nil {
 			return err
 		}
-		if u.Scheme != "https" {
-			return errors.New("only https connections are valid")
+		if !(u.Scheme == "https" || u.Scheme == "http") {
+			return errors.New("invalid scheme")
 		}
 		return err
 	}
@@ -101,7 +101,7 @@ func NewNewOrEditConnectionPopup(
 		status:                 status,
 		back:                   back,
 		backgroundText:         back.View().Content,
-		minTerminalSizeWarning: ui.NewMinTerminalSizeWarning(82, 24),
+		minTerminalSizeWarning: ui.NewMinTerminalSizeWarning(60, 24),
 		ov:                     ui.NewOverlay(status),
 
 		newConnectionPopup: ncw,

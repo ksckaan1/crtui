@@ -2,6 +2,7 @@ package taglist
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -17,13 +18,6 @@ import (
 	"github.com/ksckaan1/crtui/internal/infra/registryclient"
 	"github.com/samber/lo"
 )
-
-type Registry struct {
-	URL            string
-	Username       string
-	Password       string
-	SupportsHTTPS3 bool
-}
 
 var _ tea.Model = (*TagListScreenModel)(nil)
 
@@ -44,8 +38,9 @@ type TagListScreenModel struct {
 	width, height int
 
 	// States
-	isLoading bool
-	tagList   []*Tag
+	isLoading  bool
+	tagList    []*Tag
+	markedTags *[]*Tag
 
 	minTerminalSizeWarning *ui.MinTerminalSizeWarning
 	status                 *ui.Status
@@ -79,13 +74,16 @@ func NewTagListScreenModel(
 		tagListUI:              tagList,
 		isLoading:              true,
 		selectedRepositoryName: repositoryName,
-		minTerminalSizeWarning: ui.NewMinTerminalSizeWarning(82, 24),
+		minTerminalSizeWarning: ui.NewMinTerminalSizeWarning(60, 24),
 		status:                 status,
+		markedTags:             new([]*Tag),
 	}
 }
 
 func (m *TagListScreenModel) Init() tea.Cmd {
-	m.tagListUI.SetDelegate(&tagListDelegate{})
+	m.tagListUI.SetDelegate(&tagListDelegate{
+		markedTags: m.markedTags,
+	})
 
 	cmds := []tea.Cmd{
 		m.spinner.Tick,
@@ -105,9 +103,23 @@ func (m *TagListScreenModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch {
 		case key.Matches(msg, keyMap.Esc) &&
 			m.tagListUI.FilterState() != list.Filtering:
+			if len(*m.markedTags) > 0 {
+				*m.markedTags = []*Tag{}
+				m.status.SetStatus(ui.Info, "Marked tags cleared")
+				return m, nil
+			}
+
+			if m.tagListUI.IsFiltered() {
+				m.tagListUI.ResetFilter()
+				m.status.SetStatus(ui.Info, "Filter reset")
+				return m, nil
+			}
+
 			m.status.SetStatus(ui.Empty, "")
+
 			return nav.Navigate(m.backModel)
 
+		// SELECT TAG
 		case key.Matches(msg, keyMap.Select) &&
 			m.tagListUI.FilterState() != list.Filtering &&
 			len(m.tagList) > 0:
@@ -123,10 +135,37 @@ func (m *TagListScreenModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				),
 			)
 
-		case key.Matches(msg, keyMap.Delete) &&
+		// MARK TAGS
+		case key.Matches(msg, keyMap.Mark) &&
 			m.tagListUI.FilterState() != list.Filtering:
-			// TODO: add delete support
+			m.toggleMarkedTag()
 
+		// DELETE TAGS
+		case key.Matches(msg, keyMap.Delete) &&
+			m.tagListUI.FilterState() != list.Filtering &&
+			len(m.tagList) != 0:
+			tagNames := lo.Map(*m.markedTags, func(item *Tag, _ int) string {
+				return item.Name
+			})
+
+			if len(tagNames) == 0 {
+				tagNames = append(tagNames, m.tagList[m.tagListUI.GlobalIndex()].Name)
+			}
+
+			m.status.SetStatus(ui.Empty, "")
+
+			*m.markedTags = []*Tag{}
+
+			return nav.Navigate(NewDeleteTagsPopup(
+				m.rc,
+				m,
+				m.status,
+				m.selectedRepositoryName,
+				tagNames,
+				m.spinner,
+			))
+
+		// REFRESH
 		case key.Matches(msg, keyMap.Refresh) &&
 			m.tagListUI.FilterState() != list.Filtering:
 
@@ -135,6 +174,7 @@ func (m *TagListScreenModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.startTime = time.Now()
 			return m, tea.Batch(m.fetchTagList(), tea.RequestWindowSize)
 
+		// QUIT
 		case key.Matches(msg, keyMap.Quit):
 			return m, tea.Quit
 		}
@@ -269,4 +309,20 @@ func (m *TagListScreenModel) drawTags() string {
 	})
 
 	return m.tagsWindow.View()
+}
+
+func (m *TagListScreenModel) toggleMarkedTag() {
+	if len(m.tagList) == 0 {
+		return
+	}
+
+	targetTag := m.tagList[m.tagListUI.GlobalIndex()]
+
+	if slices.ContainsFunc(*m.markedTags, func(item *Tag) bool { return item.Name == targetTag.Name }) {
+		*m.markedTags = lo.Filter(*m.markedTags, func(item *Tag, _ int) bool {
+			return item.Name != targetTag.Name
+		})
+	} else {
+		*m.markedTags = append(*m.markedTags, targetTag)
+	}
 }

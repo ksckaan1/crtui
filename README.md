@@ -54,6 +54,8 @@ crtui
 
 The application will automatically detect any existing Docker or Podman credentials and display them in the registry list.
 
+[![asciicast](https://asciinema.org/a/Pn1sh7sRZDIOnKeh.svg)](https://asciinema.org/a/Pn1sh7sRZDIOnKeh)
+
 ## Installation
 
 ### Homebrew (macOS/Linux)

@@ -23,7 +23,7 @@ var keyMap = keyMapT{
 	),
 	Mark: key.NewBinding(
 		key.WithKeys("space"),
-		key.WithHelp("space", "Mark Tag"),
+		key.WithHelp("space", "Mark"),
 	),
 	Refresh: key.NewBinding(
 		key.WithKeys("r"),

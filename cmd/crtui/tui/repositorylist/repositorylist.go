@@ -88,7 +88,7 @@ func NewRepositoryListScreenModel(
 		isLoading: true,
 
 		selectedRepository:     new(""),
-		minTerminalSizeWarning: ui.NewMinTerminalSizeWarning(82, 24),
+		minTerminalSizeWarning: ui.NewMinTerminalSizeWarning(60, 24),
 		status:                 status,
 	}
 }
@@ -116,6 +116,12 @@ func (m *RepositoryListScreenModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch {
 		case key.Matches(msg, keyMap.Esc) &&
 			m.repositoryListUI.FilterState() != list.Filtering:
+			if m.repositoryListUI.IsFiltered() {
+				m.repositoryListUI.ResetFilter()
+				m.status.SetStatus(ui.Info, "Filter reset")
+				return m, nil
+			}
+
 			m.status.SetStatus(ui.Empty, "")
 			return nav.Navigate(m.backModel)
 

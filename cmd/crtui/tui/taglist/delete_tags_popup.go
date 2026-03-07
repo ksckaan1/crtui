@@ -1,12 +1,16 @@
 package taglist
 
 import (
+	"errors"
+	"net/http"
+
 	"charm.land/bubbles/v2/spinner"
 	"charm.land/bubbles/v2/viewport"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/ksckaan1/crtui/cmd/crtui/tui/nav"
 	"github.com/ksckaan1/crtui/cmd/crtui/tui/ui"
+	"github.com/ksckaan1/crtui/internal/core/customerrors"
 	"github.com/ksckaan1/crtui/internal/infra/registryclient"
 	"github.com/samber/lo"
 )
@@ -47,15 +51,7 @@ func NewDeleteTagsPopup(
 	tagNames []string,
 	spinner spinner.Model,
 ) *DeleteTagsPopup {
-	leftTitle := "Delete Tag"
-
-	if len(tagNames) > 1 {
-		leftTitle = "Delete Tags"
-	}
-
-	if len(tagNames) == 0 {
-		leftTitle = "Delete Repository"
-	}
+	leftTitle := lo.Ternary(len(tagNames) > 1, "Delete Tags", "Delete Tag")
 
 	popup := ui.NewWindow()
 	popup.SetWidth(40)
@@ -78,7 +74,7 @@ func NewDeleteTagsPopup(
 		status:                 status,
 		back:                   back,
 		backgroundText:         back.View().Content,
-		minTerminalSizeWarning: ui.NewMinTerminalSizeWarning(82, 24),
+		minTerminalSizeWarning: ui.NewMinTerminalSizeWarning(60, 24),
 		ov:                     ui.NewOverlay(status),
 		repositoryName:         repositoryName,
 		tagNames:               tagNames,
@@ -98,10 +94,6 @@ func (m *DeleteTagsPopup) Init() tea.Cmd {
 	cmds := []tea.Cmd{
 		m.cancelButton.Focus(),
 		tea.RequestWindowSize,
-	}
-
-	if len(m.tagNames) == 0 {
-		cmds = append(cmds, m.fetchTagList())
 	}
 
 	return tea.Batch(cmds...)
@@ -156,15 +148,11 @@ func (m *DeleteTagsPopup) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m.onDelete()
 		}
 
-	case tagListResult:
-		if msg.err != nil {
-			return m, m.status.SetStatus(ui.Error, msg.err.Error())
-		}
-
-		m.tagNames = msg.tagList
-
 	case deleteTagsResult:
 		if msg.err != nil {
+			if e, ok := errors.AsType[customerrors.ErrStatusCode](msg.err); ok && e.StatusCode == http.StatusMethodNotAllowed {
+				return m, m.status.SetStatus(ui.Error, "Deleting tags not allowed for this registry")
+			}
 			return m, m.status.SetStatus(ui.Error, msg.err.Error())
 		}
 
