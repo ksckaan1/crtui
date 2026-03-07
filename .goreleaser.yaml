@@ -25,6 +25,7 @@ brews:
     repository:
       owner: ksckaan1
       name: homebrew-tap
+      token: "{{ .Env.TAP_GITHUB_TOKEN }}"
 
 aurs:
   - name: crtui-bin
