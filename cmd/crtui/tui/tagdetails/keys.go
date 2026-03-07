@@ -29,7 +29,7 @@ var keyMap = keyMapT{
 	),
 	DeleteTag: key.NewBinding(
 		key.WithKeys("ctrl+d"),
-		key.WithHelp("ctrl+d", "Delete Tag"),
+		key.WithHelp("ctrl+d", "Delete"),
 	),
 	Esc: key.NewBinding(
 		key.WithKeys("esc"),
