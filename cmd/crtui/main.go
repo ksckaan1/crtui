@@ -1,14 +1,19 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/ksckaan1/crtui/cmd/crtui/tui/registrylist"
 	"github.com/ksckaan1/crtui/config"
+	"github.com/ksckaan1/crtui/internal/core/models"
+	"github.com/ksckaan1/crtui/internal/core/services"
+	"github.com/ksckaan1/crtui/internal/infra/updatecheckclient"
 	"github.com/ksckaan1/crtui/version"
 )
 
@@ -28,7 +33,22 @@ func main() {
 		os.Exit(1)
 	}
 
-	registryListScreen := registrylist.NewRegistryListScreenModel(cfg)
+	updateCheckClient := updatecheckclient.New()
+
+	updateService := services.NewUpdateService(updateCheckClient, false, version.Version)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	release, _ := updateService.CheckForUpdate(ctx)
+
+	var lastRelease *models.Release
+
+	if release != nil && version.Version != release.Name {
+		lastRelease = release
+	}
+
+	registryListScreen := registrylist.NewRegistryListScreenModel(cfg, lastRelease)
 
 	program := tea.NewProgram(registryListScreen)
 	_, err = program.Run()
