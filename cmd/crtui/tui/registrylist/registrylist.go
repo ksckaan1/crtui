@@ -15,6 +15,7 @@ import (
 	"github.com/ksckaan1/crtui/cmd/crtui/tui/ui"
 	"github.com/ksckaan1/crtui/config"
 	"github.com/ksckaan1/crtui/internal/core/enums/registrystatus"
+	"github.com/ksckaan1/crtui/internal/core/models"
 	"github.com/samber/lo"
 )
 
@@ -42,9 +43,11 @@ type RegistryListScreenModel struct {
 
 	minTerminalSizeWarning *ui.MinTerminalSizeWarning
 	status                 *ui.Status
+
+	lastRelease *models.Release
 }
 
-func NewRegistryListScreenModel(cfg *config.Config) *RegistryListScreenModel {
+func NewRegistryListScreenModel(cfg *config.Config, lastRelease *models.Release) *RegistryListScreenModel {
 	sp := spinner.New()
 	sp.Spinner = spinner.Dot
 
@@ -95,11 +98,16 @@ func NewRegistryListScreenModel(cfg *config.Config) *RegistryListScreenModel {
 		registries:             nil,
 		minTerminalSizeWarning: ui.NewMinTerminalSizeWarning(60, 24),
 		status:                 ui.NewStatus(),
+		lastRelease:            lastRelease,
 	}
 }
 
 func (m *RegistryListScreenModel) Init() tea.Cmd {
 	cmds := []tea.Cmd{m.spinner.Tick, tea.RequestWindowSize}
+
+	if m.lastRelease != nil {
+		cmds = append(cmds, m.status.SetStatus(ui.Info, fmt.Sprintf("New release available: %s", m.lastRelease.Name)))
+	}
 
 	m.list.SetDelegate(&registryListDelegate{
 		getSpinnerFunc: func() string {
