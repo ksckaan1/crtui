@@ -216,6 +216,20 @@ func (c *Config) SetAuth(url, username, password string) error {
 	return nil
 }
 
+func (c *Config) UpdateAuth(oldURL, oldUsername, newURL, newUserName, password string) error {
+	err := c.DeleteAuth(oldURL, oldUsername)
+	if err != nil {
+		return fmt.Errorf("delete auth: %w", err)
+	}
+
+	err = c.SetAuth(newURL, newUserName, password)
+	if err != nil {
+		return fmt.Errorf("set auth: %w", err)
+	}
+
+	return nil
+}
+
 func (c *Config) DeleteAuth(url, username string) error {
 	if c.data.Auths == nil {
 		return nil

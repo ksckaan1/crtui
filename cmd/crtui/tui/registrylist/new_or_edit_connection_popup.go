@@ -37,6 +37,8 @@ type NewOrEditConnectionPopup struct {
 	connectButton        *ui.Button
 	focusables           []focusable
 	activeFocusableIndex int
+	oldURL               string
+	oldUsername          string
 }
 
 type background interface {
@@ -87,6 +89,8 @@ func NewNewOrEditConnectionPopup(
 	testBtn := ui.NewButton("Test")
 	testBtn.SetNormalColors(lipgloss.White, lipgloss.Color("#444444"))
 
+	var oldURL, oldUsername string
+
 	if registry != nil {
 		ncw.SetLeftTitle("Edit Connection")
 		crURLti.SetValue(registry.URL)
@@ -95,6 +99,8 @@ func NewNewOrEditConnectionPopup(
 		if registry.Username != "" || registry.Password != "" {
 			isAuthRequired.SetValue(true)
 		}
+		oldURL = registry.URL
+		oldUsername = registry.Username
 	}
 
 	return &NewOrEditConnectionPopup{
@@ -120,6 +126,8 @@ func NewNewOrEditConnectionPopup(
 			&testBtn,
 			&connectBtn,
 		},
+		oldURL:      oldURL,
+		oldUsername: oldUsername,
 	}
 }
 
@@ -262,16 +270,35 @@ func (m *NewOrEditConnectionPopup) onCreate() (tea.Model, tea.Cmd) {
 		password = ""
 	}
 
-	err := m.cfg.SetAuth(
-		m.crURLtextInput.Value(),
-		username,
-		password,
-	)
+	var err error
+
+	if m.oldURL == "" {
+		err = m.cfg.SetAuth(
+			m.crURLtextInput.Value(),
+			username,
+			password,
+		)
+	} else {
+		err = m.cfg.UpdateAuth(
+			m.oldURL,
+			m.oldUsername,
+			m.crURLtextInput.Value(),
+			username,
+			password,
+		)
+	}
+
 	if err != nil {
 		return m, m.status.SetStatus(ui.Error, err.Error())
 	}
 
-	cmds := []tea.Cmd{m.status.SetStatus(ui.Info, "Connection created")}
+	cmds := []tea.Cmd{}
+
+	if m.oldURL == "" {
+		cmds = append(cmds, m.status.SetStatus(ui.Info, "Connection created"))
+	} else {
+		cmds = append(cmds, m.status.SetStatus(ui.Info, "Connection updated"))
+	}
 
 	model, cmd := nav.Navigate(m.back)
 	cmds = append(cmds, cmd)
