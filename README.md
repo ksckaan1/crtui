@@ -93,15 +93,17 @@ brew install ksckaan1/tap/crtui
 1. Add repository
 	```bash
 	sudo apk add --no-cache bash
+	```
+	```bash
 	curl -1sLf \
 	  'https://dl.cloudsmith.io/public/ksckaan1/crtui/setup.alpine.sh' \
 	  | sudo -E bash
 	```
 
 2. Install package
-```bash
-sudo apk add crtui
-```
+	```bash
+	sudo apk add crtui
+	```
 
 ### AUR (Arch Linux, CachyOS, Manjaro)
 ```bash
