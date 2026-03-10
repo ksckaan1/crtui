@@ -2,6 +2,27 @@
 
 A terminal-based TUI tool for managing container registries (`registry:2`). Supports both Docker and Podman credentials.
 
+## Table of Contents
+
+- [Features](#features)
+  - [Registry Management](#-registry-management)
+  - [Repository \& Tag Management](#-repository--tag-management)
+  - [Tag Details \& Inspection](#-tag-details--inspection)
+  - [User Experience](#-user-experience)
+- [Quick Start](#quick-start)
+- [Installation](#installation)
+  - [Homebrew](#homebrew-macoslinux)
+  - [Debian](#debian-ubuntu-linux-mint)
+  - [Fedora/RHEL](#fedorarhel)
+  - [Alpine](#alpine-apk)
+  - [AUR](#aur-arch-linux-cachyos-manjaro)
+  - [Curl+Bash](#curlbash)
+  - [Go Install](#go-install)
+  - [Direct Download](#direct-download-prebuilt-binary)
+- [Build From Source](#build-from-source)
+- [License](#license)
+
+
 ## Features
 
 ### 📦 Registry Management
