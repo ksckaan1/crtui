@@ -1,11 +1,4 @@
-```
-                       ╭─╮
-╭────╮╭────╮╭─╮  ╭─╮╭─╮├─┤
-│ ╭──╯│ ╭─┬┴╯ ╰─╮│ ││ ││ │
-│ │   │ │ ╰─╮ ╭─╯│ ││ ││ │
-│ ╰──╮│ │   │ ╰─╮│ ╰╯ ││ │
-╰────╯╰─╯   ╰───╯╰────╯╰─╯
-```
+![crtui](img/logo.png)
 
 A terminal-based TUI tool for managing container registries (`registry:2`). Supports both Docker and Podman credentials.
 
@@ -108,6 +101,11 @@ brew install ksckaan1/tap/crtui
 ### AUR (Arch Linux, CachyOS, Manjaro)
 ```bash
 yay -S crtui-bin
+```
+
+### Curl+Bash
+```bash
+curl -fSSL https://crtui.kaanksc.com/install | bash
 ```
 
 ### Go Install
