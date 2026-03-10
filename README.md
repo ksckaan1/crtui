@@ -8,7 +8,7 @@ A terminal-based TUI tool for managing container registries (`registry:2`). Supp
   - [Registry Management](#-registry-management)
   - [Repository \& Tag Management](#-repository--tag-management)
   - [Tag Details \& Inspection](#-tag-details--inspection)
-  - [User Experience](#-user-experience)
+  - [User Experience](#%EF%B8%8F-user-experience)
 - [Quick Start](#quick-start)
 - [Installation](#installation)
   - [Homebrew](#homebrew-macoslinux)
@@ -21,7 +21,6 @@ A terminal-based TUI tool for managing container registries (`registry:2`). Supp
   - [Direct Download](#direct-download-prebuilt-binary)
 - [Build From Source](#build-from-source)
 - [License](#license)
-
 
 ## Features
 
