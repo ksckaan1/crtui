@@ -2,7 +2,7 @@
 
 A terminal-based TUI tool for managing container registries (`registry:2`). Supports both Docker and Podman credentials.
 
-## Table of Contents
+## 📋 Table of Contents
 
 - [Features](#features)
   - [Registry Management](#-registry-management)
@@ -22,7 +22,7 @@ A terminal-based TUI tool for managing container registries (`registry:2`). Supp
 - [Build From Source](#build-from-source)
 - [License](#license)
 
-## Features
+## ✨ Features
 
 ### 📦 Registry Management
 - **List Registries**: View all configured container registries with their connection status (online/offline/unauthorized)
@@ -57,7 +57,7 @@ A terminal-based TUI tool for managing container registries (`registry:2`). Supp
 - **Status Feedback**: Real-time status messages showing success/error states and operation duration
 - **Loading Indicators**: Visual spinners and progress indicators during data fetching operations
 
-## Quick Start
+## 🚀 Quick Start
 
 ```bash
 crtui
@@ -67,14 +67,14 @@ The application will automatically detect any existing Docker or Podman credenti
 
 [![asciicast](https://asciinema.org/a/ujo5faGGk8PPsBeM.svg)](https://asciinema.org/a/ujo5faGGk8PPsBeM)
 
-## Installation
+## 🛠️ Installation
 
-### Homebrew (macOS/Linux)
+### 🍺 Homebrew (macOS/Linux)
 ```bash
 brew install ksckaan1/tap/crtui
 ```
 
-### Debian (Ubuntu, Linux Mint...)
+### 🐧 Debian (Ubuntu, Linux Mint...)
 1. Add repository
 	```bash
 	curl -1sLf \
@@ -88,7 +88,7 @@ brew install ksckaan1/tap/crtui
 	sudo apt install crtui
 	```
 
-### Fedora/RHEL
+### 🎩 Fedora/RHEL
 1. Add repository
 	```bash
 	curl -1sLf \
@@ -102,7 +102,7 @@ brew install ksckaan1/tap/crtui
 	sudo dnf install crtui
 	```
 
-### Alpine (apk)
+### 🏔️ Alpine (apk)
 1. Add repository
 	```bash
 	sudo apk add --no-cache bash
@@ -118,24 +118,24 @@ brew install ksckaan1/tap/crtui
 	sudo apk add crtui
 	```
 
-### AUR (Arch Linux, CachyOS, Manjaro)
+### 🐛 AUR (Arch Linux, CachyOS, Manjaro)
 ```bash
 yay -S crtui-bin
 ```
 
-### Curl+Bash
+### 🌐 Curl+Bash
 ```bash
 curl -fSSL https://crtui.kaanksc.com/install | bash
 ```
 
-### Go Install
+### 🐹 Go Install
 ```bash
 go install github.com/ksckaan1/crtui/cmd/crtui@latest
 ```
 
 Make sure `$HOME/go/bin` (or `$GOPATH/bin`) is in your PATH.
 
-### Direct Download Prebuilt Binary
+### 📦 Direct Download Prebuilt Binary
 Download from [Releases](https://github.com/ksckaan1/crtui/releases):
 - **Linux**: `.tar.gz` (amd64, arm64)
 - **macOS**: `.tar.gz` (amd64, arm64)
@@ -147,7 +147,7 @@ tar -xzf crtui_*.tar.gz
 ./crtui
 ```
 
-## Build From Source
+## 🔨 Build From Source
 
 ### Prerequisites
 - Go 1.26+
@@ -160,6 +160,6 @@ cd crtui
 go build -o crtui ./cmd/crtui
 ```
 
-## License
+## 📄 License
 
 MIT License
