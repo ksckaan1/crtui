@@ -28,8 +28,9 @@ func NewUpdateService(
 	currentVersion string,
 ) *UpdateService {
 	return &UpdateService{
-		client: client,
-		isTest: isTest,
+		client:         client,
+		isTest:         isTest,
+		currentVersion: currentVersion,
 	}
 }
 
