@@ -253,6 +253,12 @@ func (c *Config) DeleteAuth(url, username string) error {
 		keyring.Delete("crtui", fmt.Sprintf("%s@%s", username, url))
 	}
 
+	for group, elems := range c.data.Auths {
+		if len(elems) == 0 {
+			delete(c.data.Auths, group)
+		}
+	}
+
 	err := c.save()
 	if err != nil {
 		return fmt.Errorf("save: %w", err)
