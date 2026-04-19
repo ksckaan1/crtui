@@ -32,6 +32,10 @@ func getDockerAuths() ([]*Auth, error) {
 			continue
 		}
 
+		if !strings.HasPrefix(key, "http://") && !strings.HasPrefix(key, "https://") {
+			key = "https://" + key
+		}
+
 		dockerAuths = append(dockerAuths, &Auth{
 			URL:          key,
 			Username:     authConfig.Username,
@@ -79,7 +83,7 @@ func getPodmanAuths() ([]*Auth, error) {
 			continue
 		}
 
-		if !(strings.HasPrefix(key, "https://") || strings.HasPrefix(key, "http://")) {
+		if !strings.HasPrefix(key, "http://") && !strings.HasPrefix(key, "https://") {
 			key = "https://" + key
 		}
 
