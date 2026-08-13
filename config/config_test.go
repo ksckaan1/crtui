@@ -1,10 +1,12 @@
 package config
 
 import (
+	"encoding/base64"
 	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/docker/cli/cli/config"
 	"github.com/stretchr/testify/require"
 )
 
@@ -30,6 +32,52 @@ func TestIsDockerHubTokenKey(t *testing.T) {
 	for _, tc := range cases {
 		require.Equal(t, tc.want, isDockerHubTokenKey(tc.key), tc.key)
 	}
+}
+
+func TestListAuthsFromConfig(t *testing.T) {
+	auth := func(user, pass string) string {
+		return base64.StdEncoding.EncodeToString([]byte(user + ":" + pass))
+	}
+
+	configJSON := `{
+  "auths": {
+    "ghcr.io": {"auth": "` + auth("octocat", "ghp_token") + `"},
+    "https://index.docker.io/v1/": {"auth": "` + auth("ksckaan1", "dckr_pat") + `"},
+    "https://index.docker.io/v1/access-token": {"auth": "` + auth("ksckaan1", "jwt") + `"},
+    "https://index.docker.io/v1/refresh-token": {"auth": "` + auth("ksckaan1", "refresh") + `"},
+    "registry.kaanksc.com": {"auth": "` + auth("ksckaan1", "secret") + `"}
+  }
+}`
+
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.json")
+	require.NoError(t, os.WriteFile(path, []byte(configJSON), 0o600))
+
+	configFile, err := os.Open(path)
+	require.NoError(t, err)
+	defer configFile.Close()
+
+	cfg, err := config.LoadFromReader(configFile)
+	require.NoError(t, err)
+
+	auths, err := listAuthsFromConfig(cfg)
+	require.NoError(t, err)
+	require.Len(t, auths, 3)
+
+	byURL := map[string]*Auth{}
+	for _, a := range auths {
+		require.True(t, a.AutoDetected)
+		byURL[a.URL] = a
+	}
+
+	require.Equal(t, "octocat", byURL["https://ghcr.io"].Username)
+	require.Equal(t, "ghp_token", byURL["https://ghcr.io"].Password)
+
+	require.Equal(t, "ksckaan1", byURL["https://registry-1.docker.io"].Username)
+	require.Equal(t, "dckr_pat", byURL["https://registry-1.docker.io"].Password)
+
+	require.Equal(t, "ksckaan1", byURL["https://registry.kaanksc.com"].Username)
+	require.Equal(t, "secret", byURL["https://registry.kaanksc.com"].Password)
 }
 
 func TestConfig_New(t *testing.T) {

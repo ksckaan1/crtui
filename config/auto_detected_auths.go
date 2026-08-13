@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/docker/cli/cli/config"
+	"github.com/docker/cli/cli/config/configfile"
 	"github.com/ksckaan1/crtui/internal/core/enums/registrytype"
 )
 
@@ -21,22 +22,7 @@ func getDockerAuths() ([]*Auth, error) {
 		return nil, fmt.Errorf("config.Load: %w (docker config)", err)
 	}
 
-	dockerCreds, err := dockerCFG.GetAllCredentials()
-	if err != nil {
-		return nil, fmt.Errorf("cfg.GetAllCredentials: %w (docker config)", err)
-	}
-
-	dockerAuths := make([]*Auth, 0)
-
-	for key, authConfig := range dockerCreds {
-		if isDockerHubTokenKey(key) {
-			continue
-		}
-
-		dockerAuths = append(dockerAuths, newAutoDetectedAuth(key, authConfig.Username, authConfig.Password))
-	}
-
-	return dockerAuths, nil
+	return listAuthsFromConfig(dockerCFG)
 }
 
 func getPodmanAuths() ([]*Auth, error) {
@@ -63,19 +49,29 @@ func getPodmanAuths() ([]*Auth, error) {
 		return nil, fmt.Errorf("config.Load: %w (podman config)", err)
 	}
 
-	podmanCreds, err := podmanCFG.GetAllCredentials()
-	if err != nil {
-		return nil, fmt.Errorf("cfg.GetAllCredentials: %w (podman config)", err)
-	}
+	return listAuthsFromConfig(podmanCFG)
+}
 
+// listAuthsFromConfig reads every configured credential (plaintext auths or a
+// credential store/helper) from the Docker config file and converts it into an
+// auto-detected Auth. GetAuthConfig is used per registry because
+// GetAllCredentials relies on the store's list output, which some helpers
+// (e.g. docker-credential-secretservice) return with a display prefix that is
+// not a usable registry URL.
+func listAuthsFromConfig(dockerCFG *configfile.ConfigFile) ([]*Auth, error) {
 	dockerAuths := make([]*Auth, 0)
 
-	for key, authConfig := range podmanCreds {
+	for key := range dockerCFG.GetAuthConfigs() {
 		if isDockerHubTokenKey(key) {
 			continue
 		}
 
-		dockerAuths = append(dockerAuths, newAutoDetectedAuth(key, authConfig.Username, authConfig.Password))
+		auth, err := dockerCFG.GetAuthConfig(key)
+		if err != nil {
+			return nil, fmt.Errorf("cfg.GetAuthConfig(%q): %w", key, err)
+		}
+
+		dockerAuths = append(dockerAuths, newAutoDetectedAuth(key, auth.Username, auth.Password))
 	}
 
 	return dockerAuths, nil
