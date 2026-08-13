@@ -72,9 +72,9 @@ func (m *Window) SetContent(cb func(width, height int) string) {
 }
 
 func (m *Window) View() string {
-	leftTitleColor := cmp.Or(m.leftTitleColor, lipgloss.Color("#959595"))
-	rightTitleColor := cmp.Or(m.rightTitleColor, lipgloss.Color("#959595"))
-	borderColor := cmp.Or(m.borderColor, SecondaryColor)
+	leftTitleColor := cmp.Or(m.leftTitleColor, TitleColor)
+	rightTitleColor := cmp.Or(m.rightTitleColor, TitleColor)
+	borderColor := cmp.Or(m.borderColor, BorderColor)
 
 	border := lipgloss.RoundedBorder()
 

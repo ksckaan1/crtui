@@ -62,8 +62,8 @@ func NewNewOrEditConnectionPopup(
 	ncw.SetLeftTitle("New Connection")
 	ncw.SetRightTitle("esc")
 	ncw.SetBorderColor(ui.PrimaryColor)
-	ncw.SetLeftTitleColor(lipgloss.White)
-	ncw.SetRightTitleColor(lipgloss.White)
+	ncw.SetLeftTitleColor(ui.PopupTitleColor)
+	ncw.SetRightTitleColor(ui.PopupTitleColor)
 
 	crURLti := textinput.New()
 	crURLti.Placeholder = "https://example.com"
@@ -149,6 +149,9 @@ func (m *NewOrEditConnectionPopup) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.back.UpdateSize(msg)
 		m.backgroundText = m.back.View().Content
+
+	case tea.BackgroundColorMsg:
+		ui.SetDarkBackground(msg.IsDark())
 
 	case tea.KeyMsg:
 		switch {
@@ -391,7 +394,7 @@ func (m *NewOrEditConnectionPopup) View() tea.View {
 
 		if m.crURLtextInput.Value() == "" {
 			m.crURLtextInput.Prompt = lipgloss.NewStyle().
-				Foreground(lipgloss.White).
+				Foreground(ui.TextColor).
 				Render("Insert:  ")
 		} else if m.crURLtextInput.Err != nil {
 			m.crURLtextInput.Prompt = lipgloss.NewStyle().
@@ -420,7 +423,7 @@ func (m *NewOrEditConnectionPopup) View() tea.View {
 		if !m.isAuthRequired.Value() {
 			authInputs = lipgloss.NewStyle().
 				Faint(true).
-				Foreground(lipgloss.Color("#444444")).
+				Foreground(ui.FaintColor).
 				Render(ansi.Strip(authInputs))
 		}
 

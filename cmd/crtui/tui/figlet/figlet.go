@@ -8,7 +8,9 @@ import (
 	"github.com/ksckaan1/crtui/version"
 )
 
-var Figlet = lipgloss.NewStyle().Foreground(ui.PrimaryColor).Faint(false).Render(FigletText)
+func Figlet() string {
+	return lipgloss.NewStyle().Foreground(ui.PrimaryColor).Faint(false).Render(FigletText)
+}
 
 const figletText = `                       ╭─╮
 ╭────╮╭────╮╭─╮  ╭─╮╭─╮├─┤

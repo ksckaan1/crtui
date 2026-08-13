@@ -53,11 +53,11 @@ func NewDeleteTagPopupModel(
 	popup.SetLeftTitle("Delete Tag")
 	popup.SetRightTitle("esc")
 	popup.SetBorderColor(ui.PrimaryColor)
-	popup.SetLeftTitleColor(lipgloss.White)
-	popup.SetRightTitleColor(lipgloss.White)
+	popup.SetLeftTitleColor(ui.PopupTitleColor)
+	popup.SetRightTitleColor(ui.PopupTitleColor)
 
 	cancelButton := ui.NewButton(" Cancel ")
-	cancelButton.SetNormalColors(lipgloss.Color("#FFFFFF"), nil)
+	cancelButton.SetNormalColors(ui.TextColor, nil)
 
 	deleteButton := ui.NewButton(" Delete ")
 	deleteButton.SetNormalColors(lipgloss.Red, nil)
@@ -97,6 +97,9 @@ func (m *DeleteTagPopupModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.back.UpdateSize(msg)
 		m.backgroundText = m.back.View().Content
+
+	case tea.BackgroundColorMsg:
+		ui.SetDarkBackground(msg.IsDark())
 
 	case tea.KeyMsg:
 		switch {

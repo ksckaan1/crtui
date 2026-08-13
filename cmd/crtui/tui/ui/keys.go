@@ -10,21 +10,28 @@ import (
 	"charm.land/lipgloss/v2"
 )
 
-var (
-	keysContainer = lipgloss.NewStyle().
-			Width(100).
-			PaddingLeft(1)
-	keysKeyStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#FFFFFF")).
-			Width(10)
-	keysDescriptionStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("#626262"))
-)
+func keysContainer() lipgloss.Style {
+	return lipgloss.NewStyle().
+		Width(100).
+		PaddingLeft(1)
+}
+
+func keysKeyStyle() lipgloss.Style {
+	return lipgloss.NewStyle().
+		Foreground(KeyColor).
+		Width(10)
+}
+
+func keysDescriptionStyle() lipgloss.Style {
+	return lipgloss.NewStyle().
+		Foreground(DescriptionColor)
+}
 
 type KeysWindow struct {
-	keys    []key.Binding
-	window  *Window
-	content string
+	keys         []key.Binding
+	window       *Window
+	content      string
+	themeVersion int
 }
 
 func NewKeysWindow() *KeysWindow {
@@ -32,7 +39,8 @@ func NewKeysWindow() *KeysWindow {
 	w.SetLeftTitle("Keys")
 
 	return &KeysWindow{
-		window: w,
+		window:       w,
+		themeVersion: ThemeVersion,
 	}
 }
 
@@ -89,7 +97,7 @@ func (m *KeysWindow) genContent() {
 
 		var col string
 		for i, k := range m.keys {
-			col += fmt.Sprintf("%s %s", keysKeyStyle.Render(k.Help().Key), keysDescriptionStyle.Render(k.Help().Desc))
+			col += fmt.Sprintf("%s %s", keysKeyStyle().Render(k.Help().Key), keysDescriptionStyle().Render(k.Help().Desc))
 			if i%height != 3 {
 				col += "\n"
 				continue
@@ -105,13 +113,17 @@ func (m *KeysWindow) genContent() {
 
 		keysContent := lipgloss.JoinHorizontal(lipgloss.Top, cols...)
 
-		return m.cropHorizontal(keysContainer.Render(keysContent), 0, width-1)
+		return m.cropHorizontal(keysContainer().Render(keysContent), 0, width-1)
 	})
 
 	m.content = m.window.View()
+	m.themeVersion = ThemeVersion
 }
 
 func (m *KeysWindow) View() string {
+	if m.themeVersion != ThemeVersion {
+		m.genContent()
+	}
 	return m.content
 }
 

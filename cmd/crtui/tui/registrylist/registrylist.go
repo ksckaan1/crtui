@@ -73,7 +73,7 @@ func NewRegistryListScreenModel(cfg *config.Config, lastRelease *models.Release)
 			PaddingLeft(1)
 
 		descStyle := lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#626262"))
+			Foreground(ui.DescriptionColor)
 
 		onlineStatus := fmt.Sprintf("%s %s", onlineDot, descStyle.Render("Online"))
 		offlineStatus := fmt.Sprintf("%s %s", offlineDot, descStyle.Render("Offline"))
@@ -104,7 +104,7 @@ func NewRegistryListScreenModel(cfg *config.Config, lastRelease *models.Release)
 }
 
 func (m *RegistryListScreenModel) Init() tea.Cmd {
-	cmds := []tea.Cmd{m.spinner.Tick, tea.RequestWindowSize}
+	cmds := []tea.Cmd{m.spinner.Tick, tea.RequestWindowSize, tea.RequestBackgroundColor}
 
 	if m.lastRelease != nil {
 		cmds = append(cmds, m.status.SetStatus(ui.Info, fmt.Sprintf("New release available: %s", m.lastRelease.Name)))
@@ -251,6 +251,9 @@ func (m *RegistryListScreenModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.UpdateSize(msg)
 
+	case tea.BackgroundColorMsg:
+		ui.SetDarkBackground(msg.IsDark())
+
 	case registryResult:
 		m.registries[msg.index].Status = msg.status
 		m.registries[msg.index].SupportsHTTP3 = msg.supportsHTTP3
@@ -340,7 +343,7 @@ func (m *RegistryListScreenModel) View() tea.View {
 func (m *RegistryListScreenModel) drawHeader() string {
 	out := lipgloss.JoinHorizontal(
 		lipgloss.Top,
-		figlet.Figlet,
+		figlet.Figlet(),
 		" ",
 		m.keysWindow.View(),
 		" ",

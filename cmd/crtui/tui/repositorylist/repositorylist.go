@@ -170,6 +170,10 @@ func (m *RepositoryListScreenModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.UpdateSize(msg)
 
+	case tea.BackgroundColorMsg:
+		ui.SetDarkBackground(msg.IsDark())
+		m.spinner.Spinner = ui.LoadingSpinner
+
 	case repositoryListResult:
 		m.isLoading = false
 		m.repositoryListUI.ResetFilter()
@@ -248,7 +252,7 @@ func (m *RepositoryListScreenModel) View() tea.View {
 func (m *RepositoryListScreenModel) drawHeader() string {
 	out := lipgloss.JoinHorizontal(
 		lipgloss.Top,
-		figlet.Figlet,
+		figlet.Figlet(),
 		" ",
 		m.keysWindow.View(),
 	)

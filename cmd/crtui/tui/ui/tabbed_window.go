@@ -27,8 +27,8 @@ func NewTabbedWindow() *TabbedWindow {
 		height:              0,
 		activeTabIndex:      0,
 		tabs:                []string{},
-		borderColor:         lipgloss.Color("#383838"),
-		activeTabTitleColor: lipgloss.Color("#FFFFFF"),
+		borderColor:         BorderColor,
+		activeTabTitleColor: ActiveTabTitleColor,
 		content:             "",
 		vp:                  viewport.New(),
 	}

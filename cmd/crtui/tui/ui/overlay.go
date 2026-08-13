@@ -32,7 +32,7 @@ func (o Overlay) View() string {
 	cleanBack := string(ansi.Strip(o.back))
 	backLines := strings.Split(cleanBack, "\n")
 
-	faintStyle := lipgloss.NewStyle().Faint(true).Foreground(lipgloss.Color("#444444"))
+	faintStyle := lipgloss.NewStyle().Faint(true).Foreground(FaintColor)
 
 	backHeight := len(backLines)
 	backWidth := 0

@@ -139,6 +139,10 @@ func (m *TagDetailsScreenModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.UpdateSize(msg)
 
+	case tea.BackgroundColorMsg:
+		ui.SetDarkBackground(msg.IsDark())
+		m.spinner.Spinner = ui.LoadingSpinner
+
 	case tagMsg:
 		m.tag = msg.tag
 		m.err = msg.err
@@ -236,7 +240,7 @@ func (m *TagDetailsScreenModel) View() tea.View {
 func (m *TagDetailsScreenModel) drawHeader() string {
 	out := lipgloss.JoinHorizontal(
 		lipgloss.Top,
-		figlet.Figlet,
+		figlet.Figlet(),
 		" ",
 		m.keysWindow.View(),
 	)

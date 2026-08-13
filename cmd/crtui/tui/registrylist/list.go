@@ -62,13 +62,13 @@ func (d *registryListDelegate) Render(w io.Writer, m list.Model, index int, item
 	}
 
 	titleStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#FFFFFF")).Faint(true)
+		Foreground(ui.TextColor).Faint(true)
 	subtitleStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#EAEAEA")).Faint(true)
+		Foreground(ui.SubtitleColor).Faint(true)
 
 	if isSelected {
-		titleStyle = titleStyle.Foreground(lipgloss.Color("#FFFFFF")).Faint(false).Bold(true)
-		subtitleStyle = subtitleStyle.Foreground(lipgloss.Color("#FFFFFF")).Faint(false).Bold(true)
+		titleStyle = titleStyle.Foreground(ui.TextColor).Faint(false).Bold(true)
+		subtitleStyle = subtitleStyle.Foreground(ui.TextColor).Faint(false).Bold(true)
 	}
 
 	username := lo.Ternary(r.Username != "", "@"+r.Username, "anonymous")
