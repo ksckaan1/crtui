@@ -18,9 +18,16 @@ type Client struct {
 	token  string
 }
 
+// Package represents a container package (repository) on ghcr.io.
+type Package struct {
+	Name       string
+	Visibility string
+}
+
 type githubPackage struct {
 	Name        string `json:"name"`
 	PackageType string `json:"package_type"`
+	Visibility  string `json:"visibility"`
 }
 
 func New(owner, token string) *Client {
@@ -39,10 +46,10 @@ func NewWithBaseURL(owner, token, baseURL string) *Client {
 	}
 }
 
-// ListContainerPackages returns the ghcr.io repository names (owner/name) of
-// every container package owned by the configured owner. Listing packages
-// requires a GitHub token; public packages are returned as well.
-func (c *Client) ListContainerPackages(ctx context.Context) ([]string, error) {
+// ListContainerPackages returns every container package owned by the configured
+// owner as a ghcr.io repository name (owner/name) together with its visibility.
+// Listing packages requires a GitHub token; public packages are returned as well.
+func (c *Client) ListContainerPackages(ctx context.Context) ([]Package, error) {
 	isOrg, err := c.isOrg(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("detect owner type: %w", err)
@@ -53,7 +60,7 @@ func (c *Client) ListContainerPackages(ctx context.Context) ([]string, error) {
 		path = fmt.Sprintf("/orgs/%s/packages", url.PathEscape(c.owner))
 	}
 
-	repos := make([]string, 0)
+	repos := make([]Package, 0)
 
 	next := path
 	for next != "" {
@@ -78,7 +85,10 @@ func (c *Client) ListContainerPackages(ctx context.Context) ([]string, error) {
 				continue
 			}
 			if p.Name != "" {
-				repos = append(repos, fmt.Sprintf("%s/%s", c.owner, p.Name))
+				repos = append(repos, Package{
+					Name:       fmt.Sprintf("%s/%s", c.owner, p.Name),
+					Visibility: p.Visibility,
+				})
 			}
 		}
 

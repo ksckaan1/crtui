@@ -9,10 +9,11 @@ import (
 	"github.com/ksckaan1/crtui/internal/core/customerrors"
 	"github.com/ksckaan1/crtui/internal/core/enums/registrytype"
 	"github.com/ksckaan1/crtui/internal/infra/githubclient"
+	"github.com/samber/lo"
 )
 
 type repositoryListResult struct {
-	repositoryList []string
+	repositoryList []*Repository
 	err            error
 }
 
@@ -23,19 +24,26 @@ func (m *RepositoryListScreenModel) fetchRepositoryList() tea.Cmd {
 		if m.registry.Type == registrytype.GitHub {
 			ghClient := githubclient.New(m.registry.Username, m.registry.Password)
 
-			repositoryList, err := ghClient.ListContainerPackages(ctx)
+			packages, err := ghClient.ListContainerPackages(ctx)
 
 			return repositoryListResult{
-				repositoryList: repositoryList,
-				err:            err,
+				repositoryList: lo.Map(packages, func(item githubclient.Package, _ int) *Repository {
+					return &Repository{
+						Name:       item.Name,
+						Visibility: item.Visibility,
+					}
+				}),
+				err: err,
 			}
 		}
 
 		repositoryList, err := m.rc.ListRepositories(ctx)
 
 		return repositoryListResult{
-			repositoryList: repositoryList,
-			err:            err,
+			repositoryList: lo.Map(repositoryList, func(item string, _ int) *Repository {
+				return &Repository{Name: item}
+			}),
+			err: err,
 		}
 	}
 }

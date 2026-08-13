@@ -175,15 +175,9 @@ func (m *RepositoryListScreenModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.repositoryListUI.ResetFilter()
 		m.repositoryListUI.ResetSelected()
 
-		m.repositoryList = lo.Map(msg.repositoryList, func(item string, _ int) *Repository {
-			return &Repository{
-				Name: item,
-			}
-		})
+		m.repositoryList = msg.repositoryList
 		m.repositoryListUI.SetItems(lo.Map(m.repositoryList, func(item *Repository, _ int) list.Item {
-			return &Repository{
-				Name: item.Name,
-			}
+			return item
 		}))
 
 		if msg.err != nil {

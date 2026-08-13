@@ -3,6 +3,7 @@ package repositorylist
 import (
 	"fmt"
 	"io"
+	"strings"
 
 	"charm.land/bubbles/v2/list"
 	tea "charm.land/bubbletea/v2"
@@ -11,7 +12,8 @@ import (
 )
 
 type Repository struct {
-	Name string
+	Name       string
+	Visibility string
 }
 
 func (i *Repository) Title() string       { return i.Name }
@@ -49,13 +51,41 @@ func (d *repositoryListDelegate) Render(w io.Writer, m list.Model, index int, it
 
 	name := r.Name
 
+	visibilityBadge := ""
+
+	if r.Visibility != "" {
+		backgroundColor := lipgloss.Color("#3FB950")
+
+		if r.Visibility == "private" {
+			backgroundColor = lipgloss.Color("#F85149")
+		}
+
+		visibilityBadge = lipgloss.NewStyle().
+			Padding(0, 1).
+			Background(backgroundColor).
+			Foreground(lipgloss.White).
+			Bold(true).
+			Render(strings.ToUpper(r.Visibility))
+	}
+
+	width := m.Width() - lipgloss.Width(visibilityBadge) - 4
+	if width < 0 {
+		width = 0
+	}
+
+	line := lipgloss.JoinHorizontal(
+		lipgloss.Top,
+		lipgloss.NewStyle().Width(width).Render(name),
+		visibilityBadge,
+	)
+
 	if d.selectedRepository != nil && *d.selectedRepository == r.Name {
-		name = lipgloss.JoinHorizontal(
+		line = lipgloss.JoinHorizontal(
 			lipgloss.Top,
-			lipgloss.NewStyle().Width(m.Width()-5).Render(name),
+			line,
 			lipgloss.NewStyle().Foreground(ui.PrimaryColor).Render("→"),
 		)
 	}
 
-	fmt.Fprint(w, itemStyle.Render(name))
+	fmt.Fprint(w, itemStyle.Render(line))
 }
