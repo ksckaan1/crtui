@@ -8,6 +8,30 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestIsDockerHubTokenKey(t *testing.T) {
+	cases := []struct {
+		key  string
+		want bool
+	}{
+		{"https://index.docker.io/v1/access-token", true},
+		{"https://index.docker.io/v1/refresh-token", true},
+		{"https://index.docker.io/v1/refresh-token/", true},
+		{"https://registry-1.docker.io/access-token", true},
+		{"access-token", false},
+		{"refresh-token", false},
+		{"https://index.docker.io/v1/", false},
+		{"https://index.docker.io", false},
+		{"ghcr.io", false},
+		{"https://ghcr.io", false},
+		{"registry.kaanksc.com", false},
+		{"https://myregistry.example.com/repos", false},
+	}
+
+	for _, tc := range cases {
+		require.Equal(t, tc.want, isDockerHubTokenKey(tc.key), tc.key)
+	}
+}
+
 func TestConfig_New(t *testing.T) {
 	cfg, err := New(true, false)
 	require.NoError(t, err)

@@ -29,6 +29,10 @@ func getDockerAuths() ([]*Auth, error) {
 	dockerAuths := make([]*Auth, 0)
 
 	for key, authConfig := range dockerCreds {
+		if isDockerHubTokenKey(key) {
+			continue
+		}
+
 		dockerAuths = append(dockerAuths, newAutoDetectedAuth(key, authConfig.Username, authConfig.Password))
 	}
 
@@ -67,10 +71,26 @@ func getPodmanAuths() ([]*Auth, error) {
 	dockerAuths := make([]*Auth, 0)
 
 	for key, authConfig := range podmanCreds {
+		if isDockerHubTokenKey(key) {
+			continue
+		}
+
 		dockerAuths = append(dockerAuths, newAutoDetectedAuth(key, authConfig.Username, authConfig.Password))
 	}
 
 	return dockerAuths, nil
+}
+
+// isDockerHubTokenKey reports whether the key is one of the Docker CLI internal
+// entries used by the new Docker Desktop login flow. These keys
+// (https://index.docker.io/v1/access-token and .../refresh-token) store OAuth
+// tokens instead of registry credentials and must not be treated as container
+// registries.
+func isDockerHubTokenKey(key string) bool {
+	key = strings.TrimSuffix(key, "/")
+
+	return strings.HasSuffix(key, "/access-token") ||
+		strings.HasSuffix(key, "/refresh-token")
 }
 
 func newAutoDetectedAuth(key, username, password string) *Auth {
