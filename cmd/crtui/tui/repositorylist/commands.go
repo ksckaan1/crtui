@@ -3,11 +3,13 @@ package repositorylist
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/ksckaan1/crtui/internal/core/customerrors"
 	"github.com/ksckaan1/crtui/internal/core/enums/registrytype"
+	"github.com/ksckaan1/crtui/internal/infra/dockerhubclient"
 	"github.com/ksckaan1/crtui/internal/infra/githubclient"
 	"github.com/samber/lo"
 )
@@ -31,6 +33,22 @@ func (m *RepositoryListScreenModel) fetchRepositoryList() tea.Cmd {
 					return &Repository{
 						Name:       item.Name,
 						Visibility: item.Visibility,
+					}
+				}),
+				err: err,
+			}
+		}
+
+		if m.registry.Type == registrytype.DockerHub {
+			dhClient := dockerhubclient.New(m.registry.Username, m.registry.Password)
+
+			repositories, err := dhClient.ListRepositories(ctx)
+
+			return repositoryListResult{
+				repositoryList: lo.Map(repositories, func(item dockerhubclient.Repository, _ int) *Repository {
+					return &Repository{
+						Name:       fmt.Sprintf("%s/%s", item.Namespace, item.Name),
+						Visibility: lo.Ternary(item.IsPrivate, "private", "public"),
 					}
 				}),
 				err: err,

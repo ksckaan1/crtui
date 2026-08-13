@@ -15,6 +15,7 @@ import (
 	"github.com/ksckaan1/crtui/config"
 	"github.com/ksckaan1/crtui/internal/core/enums/registrystatus"
 	"github.com/ksckaan1/crtui/internal/core/enums/registrytype"
+	"github.com/ksckaan1/crtui/internal/infra/dockerhubclient"
 	"github.com/ksckaan1/crtui/internal/infra/githubclient"
 	"github.com/ksckaan1/crtui/internal/infra/registryclient"
 	"github.com/samber/lo"
@@ -216,22 +217,36 @@ func (m *NewOrEditConnectionPopup) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *NewOrEditConnectionPopup) validateConnection(url, username, password string) error {
-	if registrytype.FromURL(url) != registrytype.GitHub {
-		return nil
-	}
+	switch registrytype.FromURL(url) {
+	case registrytype.GitHub:
+		if username == "" {
+			return errors.New("GitHub username (owner) is required")
+		}
 
-	if username == "" {
-		return errors.New("GitHub username (owner) is required")
-	}
+		if password == "" {
+			return nil
+		}
 
-	if password == "" {
-		return nil
-	}
+		ghClient := githubclient.New(username, password)
 
-	ghClient := githubclient.New(username, password)
+		if err := ghClient.Validate(context.Background()); err != nil {
+			return fmt.Errorf("github: %w", err)
+		}
 
-	if err := ghClient.Validate(context.Background()); err != nil {
-		return fmt.Errorf("github: %w", err)
+	case registrytype.DockerHub:
+		if username == "" {
+			return errors.New("Docker Hub username (namespace) is required")
+		}
+
+		if password == "" {
+			return nil
+		}
+
+		dhClient := dockerhubclient.New(username, password)
+
+		if err := dhClient.Validate(context.Background()); err != nil {
+			return fmt.Errorf("docker hub: %w", err)
+		}
 	}
 
 	return nil
@@ -245,8 +260,10 @@ func (m *NewOrEditConnectionPopup) onTest() (tea.Model, tea.Cmd) {
 	username := m.usernameTextInput.Value()
 	password := m.passwordTextInput.Value()
 
+	isDockerHub := registrytype.FromURL(m.crURLtextInput.Value()) == registrytype.DockerHub
+
 	if m.isAuthRequired.Value() &&
-		(username == "" || password == "") {
+		(username == "" || (password == "" && !isDockerHub)) {
 		return m, m.status.SetStatus(ui.Error, "Insert valid username and password")
 	}
 
@@ -282,6 +299,10 @@ func (m *NewOrEditConnectionPopup) onTest() (tea.Model, tea.Cmd) {
 		return m, m.status.SetStatus(ui.Warning, "Connection successful, but a GitHub token is required to list repositories")
 	}
 
+	if registrytype.FromURL(m.crURLtextInput.Value()) == registrytype.DockerHub && password == "" {
+		return m, m.status.SetStatus(ui.Warning, "Connection successful, but only public repositories will be listed without a Docker Hub password")
+	}
+
 	return m, m.status.SetStatus(ui.Info, "Connection successful")
 }
 
@@ -293,8 +314,10 @@ func (m *NewOrEditConnectionPopup) onCreate() (tea.Model, tea.Cmd) {
 	username := m.usernameTextInput.Value()
 	password := m.passwordTextInput.Value()
 
+	isDockerHub := registrytype.FromURL(m.crURLtextInput.Value()) == registrytype.DockerHub
+
 	if m.isAuthRequired.Value() &&
-		(username == "" || password == "") {
+		(username == "" || (password == "" && !isDockerHub)) {
 		return m, m.status.SetStatus(ui.Error, "Insert valid username and password")
 	}
 
@@ -309,9 +332,11 @@ func (m *NewOrEditConnectionPopup) onCreate() (tea.Model, tea.Cmd) {
 
 	var err error
 
+	registryURL := registrytype.Normalize(m.crURLtextInput.Value())
+
 	if m.oldURL == "" {
 		err = m.cfg.SetAuth(
-			m.crURLtextInput.Value(),
+			registryURL,
 			username,
 			password,
 		)
@@ -319,7 +344,7 @@ func (m *NewOrEditConnectionPopup) onCreate() (tea.Model, tea.Cmd) {
 		err = m.cfg.UpdateAuth(
 			m.oldURL,
 			m.oldUsername,
-			m.crURLtextInput.Value(),
+			registryURL,
 			username,
 			password,
 		)

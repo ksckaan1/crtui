@@ -12,6 +12,7 @@ import (
 
 	"github.com/ksckaan1/crtui/internal/core/customerrors"
 	"github.com/ksckaan1/crtui/internal/core/enums/registrystatus"
+	"github.com/ksckaan1/crtui/internal/core/enums/registrytype"
 	"github.com/ksckaan1/crtui/internal/core/models"
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
@@ -31,6 +32,8 @@ type RegistryClient struct {
 }
 
 func New(baseURL, username, password string) *RegistryClient {
+	baseURL = registrytype.Normalize(baseURL)
+
 	defaultTransport := &http.Transport{
 		TLSClientConfig: &tls.Config{},
 	}

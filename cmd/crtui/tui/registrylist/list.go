@@ -97,13 +97,22 @@ func (d *registryListDelegate) Render(w io.Writer, m list.Model, index int, item
 
 	badges := ""
 
-	if r.Type == registrytype.GitHub {
+	switch r.Type {
+	case registrytype.GitHub:
 		badges = lipgloss.NewStyle().
 			Padding(0, 1).
 			Background(lipgloss.Color("#1F6FEB")).
 			Foreground(lipgloss.White).
 			Bold(true).
 			Render("GHCR")
+
+	case registrytype.DockerHub:
+		badges = lipgloss.NewStyle().
+			Padding(0, 1).
+			Background(lipgloss.Color("#2496ED")).
+			Foreground(lipgloss.White).
+			Bold(true).
+			Render("DOCKER HUB")
 	}
 
 	if r.AutoDetected {

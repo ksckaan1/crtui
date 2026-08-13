@@ -8,9 +8,14 @@ import (
 type RegistryType string
 
 const (
-	Docker RegistryType = "docker"
-	GitHub RegistryType = "github"
+	Docker    RegistryType = "docker"
+	GitHub    RegistryType = "github"
+	DockerHub RegistryType = "dockerhub"
 )
+
+// DockerHubRegistryHost is the canonical host that serves the Docker
+// Distribution API for Docker Hub (index.docker.io/docker.io are aliases).
+const DockerHubRegistryHost = "registry-1.docker.io"
 
 func FromURL(rawURL string) RegistryType {
 	u, err := url.Parse(rawURL)
@@ -25,9 +30,24 @@ func FromURL(rawURL string) RegistryType {
 		}
 	}
 
-	if strings.EqualFold(u.Hostname(), "ghcr.io") {
+	switch strings.ToLower(u.Hostname()) {
+	case "ghcr.io":
 		return GitHub
+	case "docker.io", "index.docker.io", "registry-1.docker.io", "registry.docker.io":
+		return DockerHub
+	default:
+		return Docker
+	}
+}
+
+// Normalize returns the canonical registry URL for the given registry URL.
+// Docker Hub aliases (docker.io, index.docker.io, ...) are mapped to the
+// host that serves the Docker Distribution API. Any other URL is returned
+// unchanged.
+func Normalize(rawURL string) string {
+	if FromURL(rawURL) != DockerHub {
+		return rawURL
 	}
 
-	return Docker
+	return "https://" + DockerHubRegistryHost
 }

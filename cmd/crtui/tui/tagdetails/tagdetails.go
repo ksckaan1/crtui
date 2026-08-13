@@ -12,6 +12,7 @@ import (
 	"github.com/ksckaan1/crtui/cmd/crtui/tui/figlet"
 	"github.com/ksckaan1/crtui/cmd/crtui/tui/nav"
 	"github.com/ksckaan1/crtui/cmd/crtui/tui/ui"
+	"github.com/ksckaan1/crtui/internal/core/enums/registrytype"
 	"github.com/ksckaan1/crtui/internal/core/models"
 	"github.com/ksckaan1/crtui/internal/infra/registryclient"
 	"github.com/samber/lo"
@@ -59,6 +60,12 @@ func NewTagDetailsScreenModel(
 	host := strings.TrimPrefix(rc.BaseURL, "https://")
 	host = strings.TrimPrefix(host, "http://")
 
+	pullCommand := fmt.Sprintf("docker pull %s/%s:%s", host, repositoryName, tagName)
+
+	if registrytype.FromURL(rc.BaseURL) == registrytype.DockerHub {
+		pullCommand = fmt.Sprintf("docker pull %s:%s", repositoryName, tagName)
+	}
+
 	kw := ui.NewKeysWindow()
 	kw.SetHeight(5)
 	kw.SetKeyMap(keyMap)
@@ -72,7 +79,7 @@ func NewTagDetailsScreenModel(
 
 		heroWindow:             hw,
 		platformsWindow:        pw,
-		pullCommand:            fmt.Sprintf("docker pull %s/%s:%s", host, repositoryName, tagName),
+		pullCommand:            pullCommand,
 		repositoryName:         repositoryName,
 		tagName:                tagName,
 		minTerminalSizeWarning: ui.NewMinTerminalSizeWarning(60, 24),

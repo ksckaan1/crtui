@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/docker/cli/cli/config"
+	"github.com/ksckaan1/crtui/internal/core/enums/registrytype"
 )
 
 func getDockerAuths() ([]*Auth, error) {
@@ -28,20 +29,7 @@ func getDockerAuths() ([]*Auth, error) {
 	dockerAuths := make([]*Auth, 0)
 
 	for key, authConfig := range dockerCreds {
-		if strings.HasPrefix(key, "https://index.docker.io/v1/") {
-			continue
-		}
-
-		if !strings.HasPrefix(key, "http://") && !strings.HasPrefix(key, "https://") {
-			key = "https://" + key
-		}
-
-		dockerAuths = append(dockerAuths, &Auth{
-			URL:          key,
-			Username:     authConfig.Username,
-			Password:     authConfig.Password,
-			AutoDetected: true,
-		})
+		dockerAuths = append(dockerAuths, newAutoDetectedAuth(key, authConfig.Username, authConfig.Password))
 	}
 
 	return dockerAuths, nil
@@ -79,23 +67,23 @@ func getPodmanAuths() ([]*Auth, error) {
 	dockerAuths := make([]*Auth, 0)
 
 	for key, authConfig := range podmanCreds {
-		if strings.HasPrefix(key, "https://index.docker.io/v1/") {
-			continue
-		}
-
-		if !strings.HasPrefix(key, "http://") && !strings.HasPrefix(key, "https://") {
-			key = "https://" + key
-		}
-
-		dockerAuths = append(dockerAuths, &Auth{
-			URL:          key,
-			Username:     authConfig.Username,
-			Password:     authConfig.Password,
-			AutoDetected: true,
-		})
+		dockerAuths = append(dockerAuths, newAutoDetectedAuth(key, authConfig.Username, authConfig.Password))
 	}
 
 	return dockerAuths, nil
+}
+
+func newAutoDetectedAuth(key, username, password string) *Auth {
+	if !strings.HasPrefix(key, "http://") && !strings.HasPrefix(key, "https://") {
+		key = "https://" + key
+	}
+
+	return &Auth{
+		URL:          registrytype.Normalize(key),
+		Username:     username,
+		Password:     password,
+		AutoDetected: true,
+	}
 }
 
 func listAutoDetectedAuths() ([]*Auth, error) {

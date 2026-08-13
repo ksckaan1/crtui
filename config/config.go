@@ -11,6 +11,7 @@ import (
 
 	"github.com/adrg/xdg"
 	"github.com/goccy/go-yaml"
+	"github.com/ksckaan1/crtui/internal/core/enums/registrytype"
 	"github.com/samber/lo"
 	"github.com/zalando/go-keyring"
 )
@@ -78,6 +79,8 @@ func (c *Config) ListAuths() ([]*Auth, error) {
 	results := make([]*Auth, 0)
 
 	for url, usernameMap := range c.data.Auths {
+		url = registrytype.Normalize(url)
+
 		for _, authData := range usernameMap {
 			var (
 				password string
