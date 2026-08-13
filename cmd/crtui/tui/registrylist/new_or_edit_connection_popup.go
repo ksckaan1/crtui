@@ -3,6 +3,7 @@ package registrylist
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/url"
 
 	"charm.land/bubbles/v2/textinput"
@@ -13,6 +14,8 @@ import (
 	"github.com/ksckaan1/crtui/cmd/crtui/tui/ui"
 	"github.com/ksckaan1/crtui/config"
 	"github.com/ksckaan1/crtui/internal/core/enums/registrystatus"
+	"github.com/ksckaan1/crtui/internal/core/enums/registrytype"
+	"github.com/ksckaan1/crtui/internal/infra/githubclient"
 	"github.com/ksckaan1/crtui/internal/infra/registryclient"
 	"github.com/samber/lo"
 )
@@ -212,6 +215,28 @@ func (m *NewOrEditConnectionPopup) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
+func (m *NewOrEditConnectionPopup) validateConnection(url, username, password string) error {
+	if registrytype.FromURL(url) != registrytype.GitHub {
+		return nil
+	}
+
+	if username == "" {
+		return errors.New("GitHub username (owner) is required")
+	}
+
+	if password == "" {
+		return nil
+	}
+
+	ghClient := githubclient.New(username, password)
+
+	if err := ghClient.Validate(context.Background()); err != nil {
+		return fmt.Errorf("github: %w", err)
+	}
+
+	return nil
+}
+
 func (m *NewOrEditConnectionPopup) onTest() (tea.Model, tea.Cmd) {
 	if m.crURLtextInput.Err != nil || m.crURLtextInput.Value() == "" {
 		return m, m.status.SetStatus(ui.Error, "Insert valid container registry url")
@@ -228,6 +253,10 @@ func (m *NewOrEditConnectionPopup) onTest() (tea.Model, tea.Cmd) {
 	if !m.isAuthRequired.Value() {
 		username = ""
 		password = ""
+	}
+
+	if err := m.validateConnection(m.crURLtextInput.Value(), username, password); err != nil {
+		return m, m.status.SetStatus(ui.Error, err.Error())
 	}
 
 	rc := registryclient.New(
@@ -249,6 +278,10 @@ func (m *NewOrEditConnectionPopup) onTest() (tea.Model, tea.Cmd) {
 		return m, m.status.SetStatus(ui.Error, "Invalid container registry")
 	}
 
+	if registrytype.FromURL(m.crURLtextInput.Value()) == registrytype.GitHub && password == "" {
+		return m, m.status.SetStatus(ui.Warning, "Connection successful, but a GitHub token is required to list repositories")
+	}
+
 	return m, m.status.SetStatus(ui.Info, "Connection successful")
 }
 
@@ -268,6 +301,10 @@ func (m *NewOrEditConnectionPopup) onCreate() (tea.Model, tea.Cmd) {
 	if !m.isAuthRequired.Value() {
 		username = ""
 		password = ""
+	}
+
+	if err := m.validateConnection(m.crURLtextInput.Value(), username, password); err != nil {
+		return m, m.status.SetStatus(ui.Error, err.Error())
 	}
 
 	var err error

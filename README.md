@@ -1,6 +1,6 @@
 <img width="300" src="img/logo.png">
 
-A terminal-based TUI tool for managing container registries (`registry:2`). Supports both Docker and Podman credentials.
+A terminal-based TUI tool for managing container registries (`registry:2` and GitHub Container Registry / `ghcr.io`). Supports both Docker and Podman credentials.
 
 ## 📋 Table of Contents
 
@@ -30,6 +30,7 @@ A terminal-based TUI tool for managing container registries (`registry:2`). Supp
 - **Edit Registry**: Modify existing registry connection details
 - **Delete Registry**: Remove registry connections from the configuration
 - **Auto-detect Credentials**: Automatically discover and use Docker/Podman credentials from config files
+- **GitHub Container Registry (ghcr.io)**: Browse ghcr.io packages and repositories. Uses the OCI Bearer token auth flow automatically and lists packages through the GitHub API (a fine-grained token with `packages:read` / `read:packages` scope is required to list repositories). Enter the GitHub username/org as the username and the token as the password.
 
 ### 📂 Repository & Tag Management
 - **Browse Repositories**: Navigate through all repositories in a selected registry

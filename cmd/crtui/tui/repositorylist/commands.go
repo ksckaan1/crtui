@@ -7,6 +7,8 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/ksckaan1/crtui/internal/core/customerrors"
+	"github.com/ksckaan1/crtui/internal/core/enums/registrytype"
+	"github.com/ksckaan1/crtui/internal/infra/githubclient"
 )
 
 type repositoryListResult struct {
@@ -17,6 +19,17 @@ type repositoryListResult struct {
 func (m *RepositoryListScreenModel) fetchRepositoryList() tea.Cmd {
 	return func() tea.Msg {
 		ctx := context.Background()
+
+		if m.registry.Type == registrytype.GitHub {
+			ghClient := githubclient.New(m.registry.Username, m.registry.Password)
+
+			repositoryList, err := ghClient.ListContainerPackages(ctx)
+
+			return repositoryListResult{
+				repositoryList: repositoryList,
+				err:            err,
+			}
+		}
 
 		repositoryList, err := m.rc.ListRepositories(ctx)
 

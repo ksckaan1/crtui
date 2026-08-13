@@ -14,6 +14,7 @@ import (
 	"github.com/ksckaan1/crtui/cmd/crtui/tui/nav"
 	"github.com/ksckaan1/crtui/cmd/crtui/tui/taglist"
 	"github.com/ksckaan1/crtui/cmd/crtui/tui/ui"
+	"github.com/ksckaan1/crtui/internal/core/enums/registrytype"
 	"github.com/ksckaan1/crtui/internal/infra/registryclient"
 	"github.com/samber/lo"
 )
@@ -23,6 +24,7 @@ type Registry struct {
 	Username       string
 	Password       string
 	SupportsHTTPS3 bool
+	Type           registrytype.RegistryType
 }
 
 var _ tea.Model = (*RepositoryListScreenModel)(nil)

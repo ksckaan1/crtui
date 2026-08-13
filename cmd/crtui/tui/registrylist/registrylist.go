@@ -15,6 +15,7 @@ import (
 	"github.com/ksckaan1/crtui/cmd/crtui/tui/ui"
 	"github.com/ksckaan1/crtui/config"
 	"github.com/ksckaan1/crtui/internal/core/enums/registrystatus"
+	"github.com/ksckaan1/crtui/internal/core/enums/registrytype"
 	"github.com/ksckaan1/crtui/internal/core/models"
 	"github.com/samber/lo"
 )
@@ -130,6 +131,7 @@ func (m *RegistryListScreenModel) Init() tea.Cmd {
 			Password:     item.Password,
 			Status:       registrystatus.Loading,
 			AutoDetected: item.AutoDetected,
+			Type:         registrytype.FromURL(item.URL),
 		}
 	})
 
@@ -183,6 +185,7 @@ func (m *RegistryListScreenModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 							Username:       reg.Username,
 							Password:       reg.Password,
 							SupportsHTTPS3: reg.SupportsHTTP3,
+							Type:           reg.Type,
 						},
 						m,
 						m.status,

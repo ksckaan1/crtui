@@ -26,26 +26,34 @@ type RegistryClient struct {
 	password         string
 	http3Transport   *http3.Transport
 	defaultTransport *http.Transport
+	authTransport    *authTransport
 	supportsHTTP3    bool
 }
 
 func New(baseURL, username, password string) *RegistryClient {
+	defaultTransport := &http.Transport{
+		TLSClientConfig: &tls.Config{},
+	}
+
+	at := newAuthTransport(username, password)
+	at.SetBase(defaultTransport)
+
 	client := resty.New().
 		SetBaseURL(baseURL).
-		SetDisableWarn(true)
+		SetDisableWarn(true).
+		SetTransport(at)
 
 	if username != "" && password != "" {
 		client = client.SetBasicAuth(username, password)
 	}
 
 	return &RegistryClient{
-		client:   client,
-		BaseURL:  baseURL,
-		username: username,
-		password: password,
-		defaultTransport: &http.Transport{
-			TLSClientConfig: &tls.Config{},
-		},
+		client:           client,
+		BaseURL:          baseURL,
+		username:         username,
+		password:         password,
+		authTransport:    at,
+		defaultTransport: defaultTransport,
 		http3Transport: &http3.Transport{
 			TLSClientConfig: &tls.Config{},
 			QUICConfig: &quic.Config{
@@ -98,13 +106,13 @@ func (r *RegistryClient) GetRegistryInfo(ctx context.Context) (*models.Registry,
 func (r *RegistryClient) SetTransport(supportsHTTP3 bool) {
 	if supportsHTTP3 && !r.supportsHTTP3 {
 		r.supportsHTTP3 = supportsHTTP3
-		r.client = r.client.SetTransport(r.http3Transport)
+		r.authTransport.SetBase(r.http3Transport)
 		return
 	}
 
 	if !supportsHTTP3 && r.supportsHTTP3 {
 		r.supportsHTTP3 = supportsHTTP3
-		r.client = r.client.SetTransport(r.defaultTransport)
+		r.authTransport.SetBase(r.defaultTransport)
 	}
 }
 

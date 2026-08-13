@@ -9,6 +9,7 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/ksckaan1/crtui/cmd/crtui/tui/ui"
 	"github.com/ksckaan1/crtui/internal/core/enums/registrystatus"
+	"github.com/ksckaan1/crtui/internal/core/enums/registrytype"
 	"github.com/samber/lo"
 )
 
@@ -19,6 +20,7 @@ type Registry struct {
 	Status        registrystatus.RegistryStatus
 	SupportsHTTP3 bool
 	AutoDetected  bool
+	Type          registrytype.RegistryType
 }
 
 func (i *Registry) Title() string       { return i.URL }
@@ -93,26 +95,41 @@ func (d *registryListDelegate) Render(w io.Writer, m list.Model, index int, item
 
 	out = leftBorder.Render(out)
 
-	autoDetectedBadge := ""
+	badges := ""
+
+	if r.Type == registrytype.GitHub {
+		badges = lipgloss.NewStyle().
+			Padding(0, 1).
+			Background(lipgloss.Color("#1F6FEB")).
+			Foreground(lipgloss.White).
+			Bold(true).
+			Render("GHCR")
+	}
 
 	if r.AutoDetected {
-		autoDetectedBadge = lipgloss.NewStyle().
+		autoDetectedBadge := lipgloss.NewStyle().
 			Padding(0, 1).
 			Background(lipgloss.White).
 			Foreground(lipgloss.Black).
 			Bold(true).
 			Render("AUTO-DETECTED")
+
+		if badges != "" {
+			badges = lipgloss.JoinHorizontal(lipgloss.Top, badges, " ", autoDetectedBadge)
+		} else {
+			badges = autoDetectedBadge
+		}
 	}
 
 	out = lipgloss.NewStyle().
 		MarginBottom(1).
-		Width(m.Width() - lipgloss.Width(autoDetectedBadge) - 2).
+		Width(m.Width() - lipgloss.Width(badges) - 2).
 		Render(out)
 
 	fmt.Fprint(w,
 		lipgloss.JoinHorizontal(lipgloss.Top,
 			out,
-			autoDetectedBadge,
+			badges,
 		),
 	)
 }
