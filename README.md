@@ -9,6 +9,7 @@ A terminal-based TUI tool for managing container registries (`registry:2`, GitHu
   - [Repository \& Tag Management](#-repository--tag-management)
   - [Tag Details \& Inspection](#-tag-details--inspection)
   - [User Experience](#%EF%B8%8F-user-experience)
+- [Supported Registries](#%F0%9F%97%82%EF%B8%8F-supported-registries)
 - [Quick Start](#quick-start)
 - [Installation](#installation)
   - [Homebrew](#homebrew-macoslinux)
@@ -29,9 +30,9 @@ A terminal-based TUI tool for managing container registries (`registry:2`, GitHu
 - **Add Registry**: Create new registry connections with custom URL, username, and password credentials
 - **Edit Registry**: Modify existing registry connection details
 - **Delete Registry**: Remove registry connections from the configuration
-- **Auto-detect Credentials**: Automatically discover and use Docker/Podman credentials from config files
+- **Auto-detect Credentials**: Automatically discover and use Docker/Podman credentials from config files, including credentials stored through credential helpers such as `docker-credential-secretservice` (system keychain).
 - **GitHub Container Registry (ghcr.io)**: Browse ghcr.io packages and repositories. Uses the OCI Bearer token auth flow automatically and lists packages through the GitHub API (a fine-grained token with `packages:read` / `read:packages` scope is required to list repositories). Enter the GitHub username/org as the username and the token as the password. Each package is marked with its `PUBLIC`/`PRIVATE` visibility.
-- **Docker Hub**: Browse Docker Hub image repositories. Docker Hub does not expose a registry catalog endpoint, so repositories are listed through the `hub.docker.com` API. Enter your Docker Hub username (namespace) as the username and a password or access token as the password. Without a password only public repositories are listed; the Docker Hub entry from Docker/Podman credentials is now auto-detected too.
+- **Docker Hub**: Browse Docker Hub image repositories. Docker Hub does not expose a registry catalog endpoint, so repositories are listed through the `hub.docker.com` API. Enter your Docker Hub username (namespace) as the username and a password or access token as the password. Without a password only public repositories are listed (up to Docker Hub's anonymous pagination limit); the Docker Hub entry from Docker/Podman credentials is auto-detected too. Each image is marked with its `PUBLIC`/`PRIVATE` visibility.
 
 ### 📂 Repository & Tag Management
 - **Browse Repositories**: Navigate through all repositories in a selected registry
@@ -59,13 +60,21 @@ A terminal-based TUI tool for managing container registries (`registry:2`, GitHu
 - **Status Feedback**: Real-time status messages showing success/error states and operation duration
 - **Loading Indicators**: Visual spinners and progress indicators during data fetching operations
 
+## 🗂️ Supported Registries
+
+| Registry | Type | Repo listing | Auth |
+| --- | --- | --- | --- |
+| `registry:2` (self-hosted, Harbor, etc.) | generic | `/v2/_catalog` | Basic / Bearer token |
+| GitHub Container Registry (`ghcr.io`) | OCI | GitHub API (`packages:read`) | GitHub token |
+| Docker Hub (`docker.io`) | OCI | `hub.docker.com` API | username (+ optional token) |
+
 ## 🚀 Quick Start
 
 ```bash
 crtui
 ```
 
-The application will automatically detect any existing Docker or Podman credentials and display them in the registry list.
+The application automatically detects existing Docker or Podman credentials and displays them in the registry list. Credentials kept in the system keychain via a credential helper (`docker-credential-*`, e.g. `secretservice`) are read transparently — they are never stored in plain text.
 
 [![asciicast](https://asciinema.org/a/ujo5faGGk8PPsBeM.svg)](https://asciinema.org/a/ujo5faGGk8PPsBeM)
 
